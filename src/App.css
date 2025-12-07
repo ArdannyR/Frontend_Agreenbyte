@@ -1,0 +1,23 @@
+/* src/App.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Botones de tiempo */
+.time-button {
+  @apply flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-gray-200 dark:bg-white/10 px-4;
+}
+
+.time-button-text {
+  @apply text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal;
+}
+
+/* Tarjetas de métricas */
+.metric-card {
+  @apply flex flex-col gap-2 rounded-xl p-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10;
+}
+
+/* Tarjetas de gráficos */
+.graph-card {
+  @apply flex flex-1 flex-col gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-6 min-w-72;
+}

@@ -1,0 +1,10 @@
+/* 1. Estas directivas inyectan todo el código de Tailwind en tu CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  min-height: max(884px, 100dvh);
+}
+
