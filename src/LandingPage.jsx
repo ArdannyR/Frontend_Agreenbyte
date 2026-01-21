@@ -163,7 +163,7 @@ function LandingPage() {
               >
                 Comenzar Ahora
               </button>
-              <a href="#features" className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all">
+              <a href="#features" className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-all">
                 Saber más
               </a>
             </div>
@@ -255,15 +255,15 @@ function LandingPage() {
         <div className="max-w-6xl mx-auto text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <img src="/agreenbyte-logo.png" alt="Agreenbyte Logo" className="w-6 h-6" />
-              <span className="text-white font-bold text-lg">Agreenbyte</span>
+              <Leaf className=" text-white" size={35} />
+              <span className="text-[25px] text-white font-bold text-lg">Agreenbyte</span>
             </div>
-            <p className="text-sm">
+            <p className="text-[15px]">
               © 2025 Juan Lucero, Brandon Huera, Ardanny Romero - Desarrollo de Aplicaciones Web
             </p>
           </div>
-          <div className="mt-6 pt-6 border-t border-gray-700/50 text-center text-xs">
-            <p>Icono de la aplicación por <a href="https://www.flaticon.es/iconos-gratis/verde" title="verde iconos" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">ultimatearm - Flaticon</a>.</p>
+          <div className="text-[15px] mt-6 pt-6 border-t border-gray-700/50 text-center text-xs">
+            <p>Icono de la aplicación por <a href="https://lucide.dev/icons/leaf" title="verde iconos" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">Lucide</a>.</p>
           </div>
         </div>
       </footer>
