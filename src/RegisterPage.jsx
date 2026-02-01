@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, User, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import clienteAxios from './config/clienteAxios';
+import backgroundImage from './assets/fondo_register.jpg'; 
 
 const RegisterPage = () => {
+
+    useEffect(() => {
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        return () => document.head.removeChild(link);
+    }, []);
+
     const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -68,24 +78,26 @@ const RegisterPage = () => {
     const { msg } = alerta;
 
     return (
-        <div className="min-h-screen bg-green-400 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+            <style>{`.font-space { font-family: 'Space Grotesk', sans-serif; }`}</style>
             
-            {/* --- Logo Header --- */}
-            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-                <div className="bg-green-600 p-3 rounded-2xl shadow-lg shadow-green-600/20 mb-6">
-                    <Leaf className="text-white h-10 w-10" strokeWidth={1.5} />
-                </div>
-                <h2 className="text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-                    Crea tu cuenta
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600 max-w">
-                    Regístrate para empezar a monitorear tu huerto.
-                </p>
+            {/* Fondo */}
+            <div 
+                className="fixed inset-0 z-0"
+                style={{
+                    backgroundImage: `url(${backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
+            >
+                
+                <div className="absolute inset-0 bg-black/20"></div>
             </div>
 
             {/* --- Form Card --- */}
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-xl shadow-gray-200/50 sm:rounded-3xl sm:px-10 border border-gray-100">
+            <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="bg-white/95 backdrop-blur-sm py-8 px-4 shadow-xl shadow-black/20 sm:rounded-3xl sm:px-10 border border-white/20">
                     
                     {/* Alerta */}
                     {msg && (
@@ -100,7 +112,20 @@ const RegisterPage = () => {
                         
                         {/* Nombre Input */}
                         <div>
-                            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
+                            {/* --- Logo Header --- */}
+                                <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
+                                    <div className="bg-green-600 p-3 rounded-2xl shadow-lg shadow-green-600/20 mb-6">
+                                        <Leaf className="text-white h-10 w-10" strokeWidth={1.5} />
+                                    </div>
+                                    <h2 className="text-center text-3xl font-space text-gray-900 tracking-tight">
+                                        Crea tu cuenta
+                                    </h2>
+                                    <p className="mt-2 text-center text-sm text-gray-600 max-w mb-4 font-space">
+                                        Regístrate para empezar a monitorear tu huerto.
+                                    </p>
+
+                                </div>
+                            <label htmlFor="nombre" className="block text-sm font-space text-gray-900 mb-1">
                                 Nombre Completo
                             </label>
                             <div className="relative rounded-xl shadow-sm">
@@ -120,7 +145,7 @@ const RegisterPage = () => {
 
                         {/* Email Input */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email" className="block text-sm font-space text-gray-900 mb-1">
                                 Correo Electrónico
                             </label>
                             <div className="relative rounded-xl shadow-sm">
@@ -140,7 +165,7 @@ const RegisterPage = () => {
 
                         {/* Password Input */}
                         <div>
-                            <label htmlFor="password" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="password" class="block text-sm font-space text-gray-900 mb-1">
                                 Contraseña
                             </label>
                             <div className="relative rounded-xl shadow-sm">
@@ -160,7 +185,7 @@ const RegisterPage = () => {
                         
                         {/* Repetir Password Input */}
                         <div>
-                            <label htmlFor="repetir-password" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="repetir-password" class="block text-sm font-space text-gray-900 mb-1">
                                 Repetir Contraseña
                             </label>
                             <div className="relative rounded-xl shadow-sm">
@@ -183,7 +208,7 @@ const RegisterPage = () => {
                             <button
                                 type="submit"
                                 disabled={cargando}
-                                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-space text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {cargando ? (
                                     <>
@@ -201,7 +226,7 @@ const RegisterPage = () => {
                     </form>
 
                     {/* Footer Link */}
-                    <p className="mt-8 text-center text-sm text-gray-500">
+                    <p className="mt-8 text-center text-sm text-gray-500 font-space">
                         ¿Ya tienes una cuenta?{' '}
                         <Link to="/login" className="font-semibold text-green-600 hover:text-green-500 transition-colors">
                             Inicia Sesión

@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import clienteAxios from './config/clienteAxios';
 import useAuth from './hooks/useAuth';
+import backgroundImage from './assets/fondo_login.jpg'
 
 const LoginPage = () => {
+
+    useEffect(() => {
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        return () => document.head.removeChild(link);
+    }, []);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [alerta, setAlerta] = useState({});
@@ -51,140 +61,144 @@ const LoginPage = () => {
     const { msg } = alerta;
 
     return (
-        <div className="min-h-screen bg-green-400 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen flex font-sans overflow-hidden">
             
-            {/* --- Logo Header --- */}
-            <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
-                <div className="bg-green-600 p-3 rounded-2xl shadow-lg shadow-green-600/20 mb-6">
-                    <Leaf className="text-white h-10 w-10" strokeWidth={1.5} />
-                </div>
-                <h2 className="text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-                    Bienvenido de nuevo
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-900 max-w">
-                    Accede a tu panel de control y monitorea tu huerto inteligente en tiempo real.
-                </p>
+            <style>{`.font-space { font-family: 'Space Grotesk', sans-serif; }`}</style>
+
+            {/* --- Left Side: Image --- */}
+            <div className="hidden lg:flex lg:flex-[6.5] relative">
+                <img 
+                    src={backgroundImage} 
+                    alt="Greenhouse with tomatoes" 
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
             </div>
 
-            {/* --- Form Card --- */}
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-xl shadow-gray-200/50 sm:rounded-3xl sm:px-10 border border-gray-100">
+            {/* --- Right Side: Login Form --- */}
+            <div className="w-full lg:flex-[3.5] bg-[#BEF035] flex items-center justify-center px-6 py-12">
+                <div className="w-full max-w-md">
                     
-                    {/* Alerta de Error */}
-                    {msg && (
-                        <div className={`${alerta.error ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'} border px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in`}>
-                            <span className="font-medium">{alerta.error ? 'Error:' : 'Éxito:'}</span>
-                            {msg}
+                    {/* --- Logo Header --- */}
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="bg-green-600 p-4 rounded-2xl shadow-lg mb-6">
+                            <Leaf className="text-white h-12 w-12" strokeWidth={1.5} />
                         </div>
-                    )}
+                        <h2 className="text-center text-3xl font-bold font-space text-gray-900 tracking-tight">
+                            Bienvenido de nuevo
+                        </h2>
+                        <p className="mt-2 text-center text-sm text-gray-800 font-space">
+                            Accede a tu panel de control y monitorea tu huerto<br/>
+                            inteligente en tiempo real.
+                        </p>
+                    </div>
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    {/* --- Form Card --- */}
+                    <div className="bg-white py-8 px-8 shadow-2xl rounded-3xl">
                         
-                        {/* Email Input */}
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                                Correo Electrónico
-                            </label>
-                            <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                                </div>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    placeholder="tu@correo.com"
-                                    className="block w-full pl-10 pr-3 py-3 border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all hover:border-gray-400"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                />
+                        {/* Alerta de Error */}
+                        {msg && (
+                            <div className={`${alerta.error ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'} border px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in`}>
+                                <span className="font-medium">{alerta.error ? 'Error:' : 'Éxito:'}</span>
+                                {msg}
                             </div>
-                        </div>
+                        )}
 
-                        {/* Password Input */}
-                        <div>
-                            <div className="flex items-center justify-between mb-1">
-                                <label htmlFor="password" class="block text-sm font-medium text-gray-700">
-                                    Contraseña
+                        <form className="space-y-5" onSubmit={handleSubmit}>
+                            
+                            {/* Email Input */}
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-space text-gray-700 mb-2">
+                                    Correo Electrónico:
                                 </label>
-                                <div className="text-sm">
-                                    <Link to="/olvide-password" class="font-medium text-green-600 hover:text-green-500 transition-colors">
-                                        ¿Olvidaste tu contraseña?
-                                    </Link>
+                                <div className="relative rounded-xl">
+                                    <input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        autoComplete="email"
+                                        required
+                                        placeholder=""
+                                        className="block w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-green-600 focus:bg-white sm:text-sm transition-all font-space"
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                    />
                                 </div>
                             </div>
-                            <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
+
+                            {/* Password Input */}
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-space text-gray-700 mb-2">
+                                    Contraseña:
+                                </label>
+                                <div className="relative rounded-xl">
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        required
+                                        placeholder=""
+                                        className="block w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-green-600 focus:bg-white sm:text-sm transition-all font-space"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                    />
                                 </div>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    required
-                                    placeholder="••••••••"
-                                    className="block w-full pl-10 pr-3 py-3 border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 sm:text-sm transition-all hover:border-gray-400"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                />
                             </div>
-                        </div>
 
-                        {/* Submit Button */}
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={cargando}
-                                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {cargando ? (
-                                    <>
-                                        <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                                        Iniciando sesión...
-                                    </>
-                                ) : (
-                                    <>
-                                        Acceder
-                                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </form>
-
-                    {/* Divider */}
-                    <div className="mt-8">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200" />
+                            {/* Submit Button */}
+                            <div className="pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={cargando}
+                                    className="w-full flex justify-center items-center py-3.5 px-4 border-0 rounded-xl shadow-sm text-sm font-semibold font-space text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {cargando ? (
+                                        <>
+                                            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                                            Iniciando sesión...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Acceder
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </>
+                                    )}
+                                </button>
                             </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="px-4 bg-white text-gray-500">
-                                    ¿No tienes una cuenta?
-                                </span>
-                            </div>
-                        </div>
+                        </form>
 
+                        {/* Divider */}
                         <div className="mt-6">
-                            <Link
-                                to="/registrar"
-                                className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-200 rounded-xl shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all"
-                            >
-                                Crear cuenta nueva
-                            </Link>
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-300" />
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white text-gray-600 font-space">
+                                        ¿No tienes una cuenta?
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="mt-6">
+                                <Link
+                                    to="/registrar"
+                                    className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-300 rounded-xl text-sm font-semibold font-space text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all"
+                                >
+                                    Crear cuenta nueva
+                                </Link>
+                            </div>
                         </div>
                     </div>
+                    
+                    {/* Footer Link */}
+                    <p className="mt-6 text-center text-sm text-gray-800">
+                        <Link to="/" className="hover:text-green-700 transition-colors flex items-center justify-center gap-1 font-space font-medium">
+                            ← Volver al inicio
+                        </Link>
+                    </p>
                 </div>
-                
-                {/* Footer Link */}
-                <p className="mt-8 text-center text-xs text-gray-500">
-                    <Link to="/" className="hover:text-green-600 transition-colors flex items-center justify-center gap-1">
-                        ← Volver al inicio
-                    </Link>
-                </p>
             </div>
         </div>
     );
