@@ -119,7 +119,7 @@ function SimuladorWidget() {
     return (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
             <div className="flex items-center gap-2 mb-4">
-                <div className="bg-purple-100 p-2 rounded-lg text-purple-600">
+                <div className="bg-[#128762] p-2 rounded-lg text-white">
                     <Calculator size={20} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-800">Simulador de Escenarios (IA)</h3>
@@ -162,7 +162,7 @@ function SimuladorWidget() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="col-span-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:bg-gray-400"
+                        className="col-span-2 bg-[#16A34A] hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:bg-gray-400"
                     >
                         {loading ? 'Calculando...' : <>Simular Predicción <ArrowRight size={16} /></>}
                     </button>
@@ -222,7 +222,7 @@ const PrediccionIA = () => {
     return (
         <div className="flex-1 p-4 md:p-6 space-y-6">
             <div className="flex items-center gap-3 mb-6">
-                <div className="bg-purple-600 p-2 rounded-xl shadow-lg shadow-purple-200">
+                <div className="bg-[#128762] p-2 rounded-xl shadow-lg shadow-purple-200">
                     <BrainCircuit className="text-white" size={24} />
                 </div>
                 <div>
