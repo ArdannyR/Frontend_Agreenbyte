@@ -44,14 +44,14 @@ ChartJS.register(
 // ===========================================
 const datosSimulados = {
     PICHINCHA: {
-    temp: { valor: 11.3, unidad: "°C", estado: "Muy Nuboso", tendencia: -0.8 },
+    temp: { valor: 0, unidad: "°C", estado: "Muy Nuboso", tendencia: -0.8 },
     humedad: {
-        valor: 88,
+        valor: 0,
         unidad: "%",
         estado: "Baja Evaporación",
         tendencia: 1.2,
     },
-    viento: { valor: 2.1, unidad: "m/s", estado: "Exterior", tendencia: 0.5 },
+    viento: { valor: 0, unidad: "m/s", estado: "Exterior", tendencia: 0.5 },
     suelo: { n: 45, p: 30, k: 60, ph: 6.5, ppm: 850, estado: "Fértil" },
     recomendacion: {
         nombre: "Papa (Solanum tuberosum)",
@@ -290,14 +290,14 @@ function Dashboard() {
 
   const datosIoT = {
     humedadSuelo: {
-      valor: 62,
+      valor: 0,
       unit: "%",
       change: 1.2,
       isPositive: true,
       icon: <Droplets size={20} />,
     },
     luz: {
-      valor: 50,
+      valor: 0,
       unit: "k Lux",
       change: 5.0,
       isPositive: true,
