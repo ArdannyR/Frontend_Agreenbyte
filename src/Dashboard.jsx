@@ -40,7 +40,7 @@ ChartJS.register(
 );
 
 // ===========================================
-// DATOS SIMULADOS POR PROVINCIA
+// DATOS POR PROVINCIA
 // ===========================================
 const datosSimulados = {
     PICHINCHA: {
@@ -280,7 +280,7 @@ function RecommendationCard({ recomendacion }) {
 }
 
 // ===========================================
-// DASHBOARD PRINCIPAL (CON CHART.JS)
+// DASHBOARD PRINCIPAL 
 // ===========================================
 function Dashboard() {
   const [provinciaSeleccionada, setProvinciaSeleccionada] =
@@ -306,7 +306,7 @@ function Dashboard() {
   };
 
   // --- CONFIGURACIÓN GRÁFICO 1: LÍNEA DE TENDENCIA (CLIMA) ---
-  // Generamos datos "falsos" alrededor de la temperatura actual para que se vea una curva
+
   const generarDatosCurva = (base) => {
     return [base - 2, base - 1, base - 3, base, base + 2, base + 4, base + 1];
   };
@@ -317,10 +317,10 @@ function Dashboard() {
       {
         label: "Temperatura (°C)",
         data: generarDatosCurva(datosApi.temp.valor),
-        borderColor: "rgb(59, 130, 246)", // Azul Tailwind
+        borderColor: "rgb(59, 130, 246)", 
         backgroundColor: "rgba(59, 130, 246, 0.2)",
         fill: true,
-        tension: 0.4, // Curva suave
+        tension: 0.4, 
       },
     ],
   };
@@ -337,7 +337,7 @@ function Dashboard() {
     },
   };
 
-  // --- CONFIGURACIÓN GRÁFICO 2: BARRAS (SUELO) ---
+  // --- CONFIGURACIÓN GRÁFICO 2 ---
   const dataSuelo = {
     labels: ["Nitrógeno (N)", "Fósforo (P)", "Potasio (K)", "pH (x10)"],
     datasets: [
@@ -474,7 +474,6 @@ function Dashboard() {
             </p>
           </div>
           <div className="h-64 mt-4 w-full">
-            {/* Aquí renderizamos el gráfico de barras */}
             <Bar data={dataSuelo} options={optionsSuelo} />
           </div>
         </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-// CORRECCIÓN: Agregamos 'User' a los imports
 import { Leaf, Home, Search, LogOut, User } from 'lucide-react';
 import useAuth from './hooks/useAuth'; 
 
@@ -17,12 +16,12 @@ function Layout() {
     return (
         <div className="min-h-screen w-full bg-gray-50 font-sans text-gray-800 flex flex-col">
             
-            <header className="sticky top-0 bg-green-400 backdrop-blur-md z-10 border-b border-gray-200 px-4 py-3">
+            <header className="sticky top-0 bg-[#BEF035] backdrop-blur-md z-10 border-b border-gray-200 px-4 py-3">
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
                     
                     {/* Título */}
                     <div className="flex items-center gap-3">
-                        <div className="bg-green-600 p-2 rounded-xl">
+                        <div className="bg-[#16A34A] p-2 rounded-xl">
                             <Leaf className="text-white" size={20} />
                         </div>
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">

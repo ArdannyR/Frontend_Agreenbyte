@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// Importamos nuevos iconos: Phone, MapPin
+
 import { User, Mail, Save, AlertCircle, CheckCircle, Phone, MapPin } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 import clienteAxios from './config/clienteAxios';
@@ -44,7 +44,7 @@ const Perfil = () => {
                 error: false
             });
             
-            // Ocultar alerta después de 3 segundos
+            
             setTimeout(() => setAlerta({}), 3000);
 
         } catch (error) {
@@ -154,7 +154,7 @@ const Perfil = () => {
                         </div>
                     </div>
 
-                    {/* Dirección (Ocupa todo el ancho) */}
+                    {/* Dirección */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
                         <div className="relative">
@@ -176,7 +176,7 @@ const Perfil = () => {
                     <div className="pt-4">
                         <button 
                             type="submit"
-                            className="w-full flex justify-center items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                            className="w-full flex justify-center items-center gap-2 bg-[#128762] hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
                         >
                             <Save size={20} />
                             Guardar Cambios
