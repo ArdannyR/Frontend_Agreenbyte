@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Leaf, Search, Droplets, Sun, Sprout, X, CloudRain, Calendar, Info } from "lucide-react";
 
 // =========================================
-// COMPONENTE: PlantModal (Ventana Emergente)
+// COMPONENTE: PlantModal 
 // =========================================
 const PlantModal = ({ plant, onClose }) => {
   if (!plant) return null;

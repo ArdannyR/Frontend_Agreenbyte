@@ -162,7 +162,7 @@ function SimuladorWidget() {
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="col-span-2 bg-[#16A34A] hover:bg-purple-700 text-white font-bold py-2 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:bg-gray-400"
+                        className="col-span-2 bg-[#16A34A] hover:bg-green-700 text-white font-bold py-2 rounded-lg transition-colors flex justify-center items-center gap-2 disabled:bg-gray-400"
                     >
                         {loading ? 'Calculando...' : <>Simular Predicción <ArrowRight size={16} /></>}
                     </button>
