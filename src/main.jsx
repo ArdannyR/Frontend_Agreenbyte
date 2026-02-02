@@ -15,8 +15,10 @@ import RegisterPage from './RegisterPage';
 import App from './Dashboard';
 import PlantSearch from './assets/PlantSearch';
 import Layout from './Layout'; 
-import RutaProtegida from './RutaProtegida'; // (El componente para proteger rutas)
+import RutaProtegida from './RutaProtegida'; 
 import OlvidePassword from './OlvidePassword';
+import PrediccionIA from './prediccionIA'; 
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -38,6 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                             <Route index element={<App />} />
                             <Route path="buscar-plantas" element={<PlantSearch />} />
                             <Route path="perfil" element={<Perfil />} />
+                            <Route path="prediccion-ia" element={<PrediccionIA />} />
                         </Route>
                     </Route>
                 </Routes>
