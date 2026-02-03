@@ -96,12 +96,6 @@ const LoginPage = () => {
                 <div className="hidden lg:flex lg:w-1/2 relative">
                     <div className="absolute inset-0 bg-green-900/40 z-10" />
                     <img src={fondoLogin} alt="Campo de cultivo" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-white p-12 text-center">
-                        <h2 className="text-5xl font-bold mb-6 font-space">Bienvenido</h2>
-                        <p className="text-xl max-w-md font-light leading-relaxed">
-                            Gestión inteligente para cultivos de alto rendimiento.
-                        </p>
-                    </div>
                 </div>
 
                 <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 bg-white relative overflow-y-auto">
