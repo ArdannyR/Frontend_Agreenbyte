@@ -1,206 +1,202 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
-import clienteAxios from './config/clienteAxios';
+import { Mail, Lock, AlertCircle, Loader2, ArrowRight, UserCheck, Tractor } from 'lucide-react';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import useAuth from './hooks/useAuth';
-import backgroundImage from './assets/fondo_login.jpg'
+import clienteAxios from './config/clienteAxios';
+import fondoLogin from './assets/fondo_login.jpg';
 
 const LoginPage = () => {
-
-    useEffect(() => {
-        const link = document.createElement('link');
-        link.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-        return () => document.head.removeChild(link);
-    }, []);
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [esAgricultor, setEsAgricultor] = useState(false); // Estado para el rol
     const [alerta, setAlerta] = useState({});
     const [cargando, setCargando] = useState(false);
 
     const { setAuth } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = async e => {
+    // Reemplaza esto con tu CLIENT ID real de Google Cloud Console
+    const GOOGLE_CLIENT_ID = "TU_GOOGLE_CLIENT_ID_AQUI.apps.googleusercontent.com";
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if([email, password].includes('')) {
-            setAlerta({
-                msg: 'Todos los campos son obligatorios',
-                error: true
-            });
+        if ([email, password].includes('')) {
+            setAlerta({ msg: 'Todos los campos son obligatorios', error: true });
             return;
         }
 
         try {
             setCargando(true);
-            setAlerta({});
-            // Hacemos la petición al backend
-            const { data } = await clienteAxios.post('/agricultores/login', { email, password });
-            
-            // Guardamos el token en localStorage
-            localStorage.setItem('token', data.token);
-            
-            // Actualizamos el estado global de autenticación
-            setAuth(data);
+            localStorage.removeItem('token');
+            localStorage.removeItem('rol'); // Limpiar rol anterior
 
-            // Redirigimos al dashboard
+            // Decidir endpoint según el rol seleccionado
+            const url = esAgricultor ? '/api/agricultores/login' : '/api/administradores/login';
+
+            const { data } = await clienteAxios.post(url, { email, password });
+
+            setAlerta({});
+
+            // Guardamos token y rol
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('rol', esAgricultor ? 'agricultor' : 'admin');
+
+            setAuth({ ...data, role: esAgricultor ? 'agricultor' : 'admin' });
             navigate('/dashboard');
+
         } catch (error) {
             setAlerta({
-                msg: error.response?.data?.msg || 'Hubo un error al iniciar sesión',
+                msg: error.response?.data?.msg || "Credenciales incorrectas",
                 error: true
             });
         } finally {
             setCargando(false);
         }
-    }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        if (esAgricultor) {
+            setAlerta({ msg: 'El inicio de sesión con Google solo está disponible para Administradores.', error: true });
+            return;
+        }
+
+        try {
+            setCargando(true);
+            const { data } = await clienteAxios.post('/api/administradores/google-login', {
+                idToken: credentialResponse.credential
+            });
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('rol', 'admin');
+            setAuth({ ...data, role: 'admin' });
+            navigate('/dashboard');
+
+        } catch (error) {
+            console.error(error);
+            setAlerta({ msg: 'Error al iniciar sesión con Google', error: true });
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const handleGoogleError = () => {
+        setAlerta({ msg: 'Falló el inicio de sesión con Google', error: true });
+    };
 
     const { msg } = alerta;
 
     return (
-        <div className="min-h-screen flex font-sans overflow-hidden">
-            
-            <style>{`.font-space { font-family: 'Space Grotesk', sans-serif; }`}</style>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <div className="flex h-screen w-full bg-white overflow-hidden">
+                <div className="hidden lg:flex lg:w-1/2 relative">
+                    <div className="absolute inset-0 bg-green-900/40 z-10" />
+                    <img src={fondoLogin} alt="Campo de cultivo" className="w-full h-full object-cover" />
+                </div>
 
-            {/* --- Left Side: Image --- */}
-            <div className="hidden lg:flex lg:flex-[6.5] relative">
-                <img 
-                    src={backgroundImage} 
-                    alt="Greenhouse with tomatoes" 
-                    className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-            </div>
+                <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 bg-white relative overflow-y-auto">
+                    <Link to="/" className="absolute top-8 left-8 text-gray-500 hover:text-green-600 flex items-center gap-2 transition-colors">
+                        <ArrowRight className="rotate-180" size={20} /> Volver
+                    </Link>
 
-            {/* --- Right Side: Login Form --- */}
-            <div className="w-full lg:flex-[3.5] bg-[#BEF035] flex items-center justify-center px-6 py-12">
-                <div className="w-full max-w-md">
-                    
-                    {/* --- Logo Header --- */}
-                    <div className="flex flex-col items-center mb-8">
-                        <div className="bg-green-600 p-4 rounded-2xl shadow-lg mb-6">
-                            <Leaf className="text-white h-12 w-12" strokeWidth={1.5} />
+                    <div className="w-full max-w-md space-y-8 mt-12 lg:mt-0">
+                        <div className="text-center lg:text-left">
+                            <h1 className="text-4xl font-bold text-gray-900 font-space tracking-tight mb-2">Iniciar Sesión</h1>
+                            <p className="text-gray-500">Selecciona tu perfil e ingresa.</p>
                         </div>
-                        <h2 className="text-center text-3xl font-bold font-space text-gray-900 tracking-tight">
-                            Bienvenido de nuevo
-                        </h2>
-                        <p className="mt-2 text-center text-sm text-gray-800 font-space">
-                            Accede a tu panel de control y monitorea tu huerto<br/>
-                            inteligente en tiempo real.
-                        </p>
-                    </div>
 
-                    {/* --- Form Card --- */}
-                    <div className="bg-white py-8 px-8 shadow-2xl rounded-3xl">
-                        
-                        {/* Alerta de Error */}
+                        {/* SELECTOR DE ROL */}
+                        <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                            <button
+                                type="button"
+                                onClick={() => { setEsAgricultor(false); setAlerta({}); }}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all ${!esAgricultor ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <UserCheck size={18} /> Administrador
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setEsAgricultor(true); setAlerta({}); }}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all ${esAgricultor ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <Tractor size={18} /> Agricultor
+                            </button>
+                        </div>
+
                         {msg && (
-                            <div className={`${alerta.error ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'} border px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-fade-in`}>
-                                <span className="font-medium">{alerta.error ? 'Error:' : 'Éxito:'}</span>
+                            <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-medium animate-fade-in-down ${alerta.error ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100'}`}>
+                                <AlertCircle size={20} />
                                 {msg}
                             </div>
                         )}
 
-                        <form className="space-y-5" onSubmit={handleSubmit}>
-                            
-                            {/* Email Input */}
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-space text-gray-700 mb-2">
-                                    Correo Electrónico:
-                                </label>
-                                <div className="relative rounded-xl">
-                                    <input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        required
-                                        placeholder=""
-                                        className="block w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-green-600 focus:bg-white sm:text-sm transition-all font-space"
-                                        value={email}
-                                        onChange={e => setEmail(e.target.value)}
-                                    />
+                        <form className="space-y-6" onSubmit={handleSubmit}>
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Email</label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                        </div>
+                                        <input type="email" className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-gray-50 focus:bg-white" value={email} onChange={e => setEmail(e.target.value)} required />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Contraseña</label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                                        </div>
+                                        <input type="password" className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-gray-50 focus:bg-white" value={password} onChange={e => setPassword(e.target.value)} required />
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Password Input */}
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-space text-gray-700 mb-2">
-                                    Contraseña:
-                                </label>
-                                <div className="relative rounded-xl">
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        autoComplete="current-password"
-                                        required
-                                        placeholder=""
-                                        className="block w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-green-600 focus:bg-white sm:text-sm transition-all font-space"
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Submit Button */}
-                            <div className="pt-2">
-                                <button
-                                    type="submit"
-                                    disabled={cargando}
-                                    className="w-full flex justify-center items-center py-3.5 px-4 border-0 rounded-xl shadow-sm text-sm font-semibold font-space text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                                >
-                                    {cargando ? (
-                                        <>
-                                            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                                            Iniciando sesión...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Acceder
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <button type="submit" disabled={cargando} className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg shadow-green-500/30 text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed">
+                                {cargando ? <Loader2 className="animate-spin" /> : 'Ingresar'}
+                            </button>
                         </form>
 
-                        {/* Divider */}
-                        <div className="mt-6">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-300" />
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-4 bg-white text-gray-600 font-space">
-                                        ¿No tienes una cuenta?
-                                    </span>
-                                </div>
-                            </div>
-
+                        {/* SECCIÓN DE GOOGLE LOGIN (Solo para administradores) */}
+                        {!esAgricultor && (
                             <div className="mt-6">
-                                <Link
-                                    to="/registrar"
-                                    className="w-full flex justify-center items-center py-3 px-4 border-2 border-gray-300 rounded-xl text-sm font-semibold font-space text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all"
-                                >
-                                    Crear cuenta nueva
-                                </Link>
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-300"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-white text-gray-500">O inicia sesión con</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex justify-center">
+                                    <GoogleLogin
+                                        onSuccess={handleGoogleSuccess}
+                                        onError={handleGoogleError}
+                                        useOneTap
+                                        theme="outline"
+                                        shape="pill"
+                                        width="100%"
+                                        text="continue_with"
+                                    />
+                                </div>
                             </div>
+                        )}
+
+                        {/* ENLACE A REGISTRO */}
+                        <div className="mt-8 text-center pb-8">
+                            <p className="text-sm text-gray-600">
+                                ¿No tienes una cuenta?{' '}
+                                <Link to="/registrar" className="font-bold text-green-600 hover:text-green-500 transition-colors">
+                                    Regístrate aquí
+                                </Link>
+                            </p>
                         </div>
                     </div>
-                    
-                    {/* Footer Link */}
-                    <p className="mt-6 text-center text-sm text-gray-800">
-                        <Link to="/" className="hover:text-green-700 transition-colors flex items-center justify-center gap-1 font-space font-medium">
-                            ← Volver al inicio
-                        </Link>
-                    </p>
                 </div>
             </div>
-        </div>
+        </GoogleOAuthProvider>
     );
 };
 
