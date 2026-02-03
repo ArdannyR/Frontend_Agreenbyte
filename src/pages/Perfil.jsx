@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import useAuth from './hooks/useAuth';
-import clienteAxios from './config/clienteAxios';
+import useAuth from '../hooks/useAuth';
+import clienteAxios from '../config/clienteAxios';
 import { User, Mail, Phone, MapPin, Save, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 const Perfil = () => {

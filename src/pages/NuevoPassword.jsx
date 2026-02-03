@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Leaf, Lock, ArrowRight, Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import clienteAxios from './config/clienteAxios';
+import clienteAxios from '../config/clienteAxios';
 
 const NuevoPassword = () => {
     const [password, setPassword] = useState('');

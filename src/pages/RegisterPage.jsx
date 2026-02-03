@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Mail, Lock, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
-import clienteAxios from './config/clienteAxios';
-import fondoRegister from './assets/fondo_register.jpg'; // Recuperamos la imagen
+import clienteAxios from '../config/clienteAxios';
+import fondoRegister from '../assets/fondo_register.jpg'; // Recuperamos la imagen
 
 const RegisterPage = () => {
     const [nombre, setNombre] = useState('');

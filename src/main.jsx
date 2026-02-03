@@ -2,22 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from './context/AuthProvider';
-import ConfirmarCuenta from './ConfirmarCuenta';
-import NuevoPassword from './NuevoPassword';
-import Perfil from './Perfil';
+import ConfirmarCuenta from './pages/ConfirmarCuenta';
+import NuevoPassword from './pages/NuevoPassword';
+import Perfil from './pages/Perfil';
 import './index.css';
 
 
 // Páginas
-import LandingPage from './LandingPage';
-import LoginPage from './LoginPage';
-import RegisterPage from './RegisterPage'; 
-import App from './Dashboard';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage'; 
+import App from './pages/Dashboard';
 import PlantSearch from './assets/PlantSearch';
-import Layout from './Layout'; 
-import RutaProtegida from './RutaProtegida'; 
-import OlvidePassword from './OlvidePassword';
-import PrediccionIA from './prediccionIA'; 
+import Layout from './Layout/Layout'; 
+import RutaProtegida from './routes/RutaProtegida'; 
+import OlvidePassword from './pages/OlvidePassword';
+import PrediccionIA from './pages/prediccionIA'; 
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(

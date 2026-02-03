@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle
 } from 'lucide-react';
-import clienteAxios from './config/clienteAxios';
-import useAuth from './hooks/useAuth';
+import clienteAxios from '../config/clienteAxios';
+import useAuth from '../hooks/useAuth';
 import AgricultorDashboard from './AgricultorDashboard'; 
 
 // === COMPONENTE TOAST (Notificación Flotante) ===

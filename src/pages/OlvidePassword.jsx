@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Leaf, Mail, ArrowRight, Loader2, ArrowLeft, UserCheck, Tractor } from 'lucide-react';
-import clienteAxios from './config/clienteAxios';
+import clienteAxios from '../config/clienteAxios';
 
 const OlvidePassword = () => {
     const [email, setEmail] = useState('');

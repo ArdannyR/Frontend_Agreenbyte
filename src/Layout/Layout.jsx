@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 // AGREGA "BrainCircuit" AQUI ABAJO 
 import { Leaf, Home, Search, LogOut, User, BrainCircuit } from 'lucide-react'; 
-import useAuth from './hooks/useAuth'; 
+import useAuth from '../hooks/useAuth'; 
 
 function Layout() {
     const { cerrarSesion } = useAuth();

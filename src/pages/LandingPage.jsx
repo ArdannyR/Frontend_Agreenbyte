@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Leaf, Activity, Bell, Droplets, ArrowRight } from 'lucide-react';
 
 // IMPORTANTE: Asegúrate de que el video esté en esta ruta
-import heroVideo from './assets/hero-video.mp4'; 
+import heroVideo from '../assets/hero-video.mp4'; 
 
 // =========================================
 // COMPONENTE DE GALERÍA (CARRUSEL)

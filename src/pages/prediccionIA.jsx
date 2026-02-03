@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Calculator, ArrowRight, BrainCircuit, Thermometer, Sun 
 } from "lucide-react";
-import { obtenerAlertaHelada, predecirTemperatura } from './services/iaService';
+import { obtenerAlertaHelada, predecirTemperatura } from '../services/iaService';
 
 // --- COMPONENTE 1: TARJETA DE ALERTA AUTOMÁTICA ---
 function AlertaIACard({ data, loading }) {

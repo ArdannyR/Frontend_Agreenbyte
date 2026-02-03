@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle, AlertTriangle, Loader2, Info } from 'lucide-react'; // Añadimos Info icon
-import clienteAxios from './config/clienteAxios';
+import clienteAxios from '../config/clienteAxios';
 
 const ConfirmarCuenta = () => {
   const [cuentaConfirmada, setCuentaConfirmada] = useState(false);

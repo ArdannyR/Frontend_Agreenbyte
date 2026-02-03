@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, Loader2, ArrowRight, UserCheck, Tractor } from 'lucide-react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
-import useAuth from './hooks/useAuth';
-import clienteAxios from './config/clienteAxios';
-import fondoLogin from './assets/fondo_login.jpg';
+import useAuth from '../hooks/useAuth';
+import clienteAxios from '../config/clienteAxios';
+import fondoLogin from '../assets/fondo_login.jpg';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react'; // Para el spinner de carga
-import useAuth from './hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 
 const RutaProtegida = () => {
     
@@ -23,8 +23,8 @@ const RutaProtegida = () => {
     // 2. Una vez que NO está cargando, decidimos:
     return (
         auth?._id ? (
-            // Si hay un usuario autenticado (auth._id existe),
-            // renderizamos el contenido de la ruta (ej. <Layout />)
+            
+            // renderizamos el contenido de la ruta
             <Outlet />
         ) : (
             // Si no hay usuario, lo redirigimos a la página de login
