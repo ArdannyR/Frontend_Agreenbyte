@@ -10,6 +10,7 @@ const NuevoPassword = () => {
     const [alerta, setAlerta] = useState({});
     const [passwordModificado, setPasswordModificado] = useState(false);
     const [cargando, setCargando] = useState(true);
+    const [esAgricultor, setEsAgricultor] = useState(false); // Estado para saber si es agricultor o admin
 
     // Usamos useRef para evitar la doble ejecución estricta de React 18 en desarrollo
     const efectoEjecutado = useRef(false);
@@ -24,16 +25,22 @@ const NuevoPassword = () => {
             efectoEjecutado.current = true;
 
             try {
-                // Hacemos la petición GET para verificar que el token existe en la BD
-                // Asegúrate de que tu backend tenga: router.get('/olvide-password/:token', comprobarToken);
-                await clienteAxios(`/agricultores/olvide-password/${token}`);
-                
-                setTokenValido(true);
+                // Intentamos primero como Administrador
+                try {
+                    await clienteAxios(`/api/administradores/olvide-password/${token}`);
+                    setTokenValido(true);
+                    setEsAgricultor(false);
+                } catch (errorAdmin) {
+                    // Si falla, intentamos como Agricultor
+                    await clienteAxios(`/api/agricultores/olvide-password/${token}`);
+                    setTokenValido(true);
+                    setEsAgricultor(true);
+                }
                 
             } catch (error) {
-                console.log(error); // Para ver el error real en consola
+                console.log(error); 
                 setAlerta({
-                    msg: error.response?.data?.msg || 'Token no válido o expirado',
+                    msg: 'Token no válido o expirado',
                     error: true
                 });
             } finally {
@@ -66,7 +73,11 @@ const NuevoPassword = () => {
         }
 
         try {
-            const url = `/agricultores/olvide-password/${token}`;
+            // Usamos la ruta correcta según lo detectado
+            const url = esAgricultor 
+                ? `/api/agricultores/olvide-password/${token}`
+                : `/api/administradores/olvide-password/${token}`;
+
             const { data } = await clienteAxios.post(url, { password });
             
             setAlerta({
@@ -94,7 +105,7 @@ const NuevoPassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-green-400 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+        <div className="min-h-screen bg-[#BEF035] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
             
             <div className="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center mb-6">
                 <div className="bg-green-600 p-3 rounded-2xl shadow-lg shadow-green-600/20 mb-4">
@@ -182,9 +193,9 @@ const NuevoPassword = () => {
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                                 <AlertTriangle className="h-6 w-6 text-red-600" />
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">Enlace Expirado</h3>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">Enlace Expirado o Inválido</h3>
                             <p className="text-sm text-gray-500 mb-6">
-                                Este enlace ya no es válido. Es posible que ya lo hayas usado o que haya caducado.
+                                Este enlace no es válido. Es posible que ya lo hayas usado, que haya caducado, o que estés intentando acceder con el rol incorrecto.
                             </p>
                             <Link 
                                 to="/olvide-password" 

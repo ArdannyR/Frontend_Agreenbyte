@@ -16,8 +16,8 @@ const LoginPage = () => {
     const { setAuth } = useAuth();
     const navigate = useNavigate();
 
-    // Reemplaza esto con tu CLIENT ID real de Google Cloud Console
-    const GOOGLE_CLIENT_ID = "TU_GOOGLE_CLIENT_ID_AQUI.apps.googleusercontent.com";
+    // ID de Cliente de Google (Asegúrate de que coincida con el de Google Cloud Console)
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "846514170336-j50frmki30h52rt0rbrbplibtv1nrooc.apps.googleusercontent.com";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,7 +30,7 @@ const LoginPage = () => {
         try {
             setCargando(true);
             localStorage.removeItem('token');
-            localStorage.removeItem('rol'); // Limpiar rol anterior
+            localStorage.removeItem('rol'); 
 
             // Decidir endpoint según el rol seleccionado
             const url = esAgricultor ? '/api/agricultores/login' : '/api/administradores/login';
@@ -74,15 +74,18 @@ const LoginPage = () => {
             navigate('/dashboard');
 
         } catch (error) {
-            console.error(error);
-            setAlerta({ msg: 'Error al iniciar sesión con Google', error: true });
+            console.error("Error Google Login:", error);
+            setAlerta({ 
+                msg: error.response?.data?.msg || 'Error al iniciar sesión con Google', 
+                error: true 
+            });
         } finally {
             setCargando(false);
         }
     };
 
     const handleGoogleError = () => {
-        setAlerta({ msg: 'Falló el inicio de sesión con Google', error: true });
+        setAlerta({ msg: 'Falló la conexión con Google. Revisa tu configuración.', error: true });
     };
 
     const { msg } = alerta;
@@ -93,6 +96,12 @@ const LoginPage = () => {
                 <div className="hidden lg:flex lg:w-1/2 relative">
                     <div className="absolute inset-0 bg-green-900/40 z-10" />
                     <img src={fondoLogin} alt="Campo de cultivo" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-white p-12 text-center">
+                        <h2 className="text-5xl font-bold mb-6 font-space">Bienvenido</h2>
+                        <p className="text-xl max-w-md font-light leading-relaxed">
+                            Gestión inteligente para cultivos de alto rendimiento.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-16 bg-white relative overflow-y-auto">
@@ -153,6 +162,16 @@ const LoginPage = () => {
                                 </div>
                             </div>
 
+                            {/* --- ENLACE OLVIDÉ CONTRASEÑA --- */}
+                            <div className="flex items-center justify-end">
+                                <Link 
+                                    to="/olvide-password" 
+                                    className="text-sm font-medium text-green-600 hover:text-green-500 transition-colors hover:underline"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            </div>
+
                             <button type="submit" disabled={cargando} className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg shadow-green-500/30 text-sm font-bold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed">
                                 {cargando ? <Loader2 className="animate-spin" /> : 'Ingresar'}
                             </button>
@@ -184,7 +203,6 @@ const LoginPage = () => {
                             </div>
                         )}
 
-                        {/* ENLACE A REGISTRO */}
                         <div className="mt-8 text-center pb-8">
                             <p className="text-sm text-gray-600">
                                 ¿No tienes una cuenta?{' '}

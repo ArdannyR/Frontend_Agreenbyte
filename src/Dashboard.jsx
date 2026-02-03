@@ -1,13 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon
+  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle
 } from 'lucide-react';
 import clienteAxios from './config/clienteAxios';
 import useAuth from './hooks/useAuth';
 import AgricultorDashboard from './AgricultorDashboard'; 
 
+// === COMPONENTE TOAST (Notificación Flotante) ===
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000); // Se cierra a los 3 segundos
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800';
+  const Icon = type === 'error' ? AlertCircle : CheckCircle;
+
+  return (
+    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg transition-all animate-fade-in-down ${bgColor}`}>
+      <Icon size={20} />
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-70"><X size={16}/></button>
+    </div>
+  );
+};
+
+// === COMPONENTE MODAL DE CONFIRMACIÓN (Reemplazo de window.confirm) ===
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+        <div className="p-6 text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm text-gray-500 mb-6">{message}</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={onClose} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg transition-colors">
+              Cancelar
+            </button>
+            <button onClick={() => { onConfirm(); onClose(); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md">
+              Sí, eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // === COMPONENTE VISTA DE ADMINISTRADOR ===
-const AdminView = ({ auth }) => {
+const AdminView = ({ auth, cerrarSesion }) => {
   const [activeTab, setActiveTab] = useState('huertos');
   const [huertos, setHuertos] = useState([]);
   const [agricultores, setAgricultores] = useState([]);
@@ -16,6 +63,18 @@ const AdminView = ({ auth }) => {
   const [asignarMode, setAsignarMode] = useState(null);
   const [agricultorSeleccionado, setAgricultorSeleccionado] = useState("");
 
+  // Estados para Toast y Modal
+  const [toast, setToast] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+  };
+
+  const openConfirmModal = (title, message, onConfirm) => {
+    setModalConfig({ isOpen: true, title, message, onConfirm });
+  };
+
   const [nombreHuerto, setNombreHuerto] = useState('');
   const [ubicacionHuerto, setUbicacionHuerto] = useState('');
   const [cultivoHuerto, setCultivoHuerto] = useState('');
@@ -23,6 +82,17 @@ const AdminView = ({ auth }) => {
   const [nombreAgricultor, setNombreAgricultor] = useState('');
   const [emailAgricultor, setEmailAgricultor] = useState('');
   const [passwordAgricultor, setPasswordAgricultor] = useState('');
+
+  // Función para recargar huertos (útil para actualizar contadores)
+  const recargarHuertos = async () => {
+      const token = localStorage.getItem('token');
+      if(!token) return;
+      const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
+      try {
+         const { data } = await clienteAxios.get('/api/huertos', config);
+         setHuertos(data);
+      } catch (error) { console.error("Error recargando huertos:", error); }
+  };
 
   useEffect(() => {
     const obtenerDatos = async () => {
@@ -46,19 +116,25 @@ const AdminView = ({ auth }) => {
   }, []);
 
   const handleAsignar = async (huertoId) => {
-      if(!agricultorSeleccionado) return alert("Selecciona un agricultor");
+      if(!agricultorSeleccionado) return showToast("Selecciona un agricultor", "error");
+      
+      const agricultorObj = agricultores.find(a => a._id === agricultorSeleccionado);
+      if (!agricultorObj) return showToast("Agricultor no encontrado", "error");
+
       try {
           const token = localStorage.getItem('token');
           const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
-          await clienteAxios.post(`/api/huertos/asignar/${huertoId}`, { agricultorId: agricultorSeleccionado }, config);
-          alert("Agricultor asignado correctamente");
+          
+          await clienteAxios.post(`/api/huertos/agricultor/${huertoId}`, { email: agricultorObj.email }, config);
+          
+          showToast("Agricultor asignado correctamente");
           setAsignarMode(null);
           setAgricultorSeleccionado("");
-          // Recargar para actualizar contador
-          const resH = await clienteAxios.get('/api/huertos', config);
-          setHuertos(resH.data);
+          
+          // Recargar huertos para ver el contador actualizado
+          recargarHuertos();
       } catch (e) { 
-          alert(e.response?.data?.msg || "Error al asignar"); 
+          showToast(e.response?.data?.msg || "Error al asignar", "error"); 
       }
   }
 
@@ -70,7 +146,8 @@ const AdminView = ({ auth }) => {
           const { data } = await clienteAxios.post('/api/huertos', { nombre: nombreHuerto, ubicacion: ubicacionHuerto, tipoCultivo: cultivoHuerto, codigoDispositivo }, config);
           setHuertos([...huertos, data]); setShowForm(false);
           setNombreHuerto(''); setUbicacionHuerto(''); setCultivoHuerto(''); setCodigoDispositivo('');
-      } catch (alert) { alert("Error al crear huerto"); }
+          showToast("Huerto creado exitosamente");
+      } catch (e) { showToast(e.response?.data?.msg || "Error al crear huerto", "error"); }
   }
 
   const handleAgregarAgricultor = async (e) => {
@@ -79,26 +156,70 @@ const AdminView = ({ auth }) => {
           const token = localStorage.getItem('token');
           const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
           const { data } = await clienteAxios.post('/api/agricultores', { nombre: nombreAgricultor, email: emailAgricultor, password: passwordAgricultor }, config);
-          if(data) { setAgricultores([...agricultores, data]); setShowForm(false); setNombreAgricultor(''); setEmailAgricultor(''); setPasswordAgricultor(''); alert("Agricultor Creado"); }
-      } catch (alert) { alert("Error al crear agricultor"); }
+          if(data) { 
+              setAgricultores([...agricultores, data]); 
+              setShowForm(false); 
+              setNombreAgricultor(''); setEmailAgricultor(''); setPasswordAgricultor(''); 
+              showToast("Agricultor registrado exitosamente"); 
+          }
+      } catch (e) { showToast(e.response?.data?.msg || "Error al crear agricultor", "error"); }
   }
 
-  const handleDelHuerto = async (id) => {
-      if(!confirm("¿Estás seguro de borrar este huerto?")) return;
-      const token = localStorage.getItem('token');
-      await clienteAxios.delete(`/api/huertos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setHuertos(huertos.filter(h=>h._id!==id));
+  const handleDelHuerto = (id) => {
+      openConfirmModal(
+        "Eliminar Huerto", 
+        "¿Estás seguro de que quieres eliminar este huerto? Esta acción no se puede deshacer.",
+        async () => {
+            try {
+                const token = localStorage.getItem('token');
+                await clienteAxios.delete(`/api/huertos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                setHuertos(huertos.filter(h=>h._id!==id));
+                showToast("Huerto eliminado");
+            } catch (error) {
+                showToast("Error al eliminar huerto", "error");
+            }
+        }
+      );
   }
 
-  const handleDelAgri = async (id) => {
-      if(!confirm("¿Estás seguro de borrar este agricultor?")) return;
-      const token = localStorage.getItem('token');
-      await clienteAxios.delete(`/api/agricultores/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setAgricultores(agricultores.filter(a=>a._id!==id));
+  const handleDelAgri = (id) => {
+      openConfirmModal(
+        "Eliminar Agricultor",
+        "¿Estás seguro de eliminar a este agricultor? Se desvinculará de todos los huertos.",
+        async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                await clienteAxios.delete(`/api/agricultores/${id}`, config);
+                
+                // Actualizamos lista local de agricultores
+                setAgricultores(agricultores.filter(a=>a._id!==id));
+                
+                // CRÍTICO: Recargamos los huertos para que el contador de "X agricultores monitoreando" se actualice
+                // ya que el backend ahora limpia las referencias automáticamente.
+                recargarHuertos(); 
+                
+                showToast("Agricultor eliminado y desvinculado");
+            } catch (error) { 
+                console.error(error); 
+                showToast("Error al eliminar agricultor", "error"); 
+            }
+        }
+      );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
+    <div className="bg-gray-50 min-h-screen font-sans relative">
+      {/* Toast y Modal */}
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      <ConfirmModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={() => setModalConfig({...modalConfig, isOpen: false})} 
+        title={modalConfig.title} 
+        message={modalConfig.message} 
+        onConfirm={modalConfig.onConfirm} 
+      />
+
       <div className="bg-white shadow-sm border-b border-gray-100 p-4 flex justify-between items-center sticky top-0 z-10">
           <h1 className="text-2xl font-bold text-gray-900">Admin Panel - <span className='text-green-600'>{auth.nombre}</span></h1>
       </div>
@@ -137,7 +258,7 @@ const AdminView = ({ auth }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'huertos' ? huertos.map(h => (
                       <div key={h._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group hover:shadow-md transition">
-                          <button onClick={()=>handleDelHuerto(h._id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition"><Trash2 size={18}/></button>
+                          <button onClick={()=>handleDelHuerto(h._id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition hover:scale-110"><Trash2 size={18}/></button>
                           
                           <div className="flex items-center gap-3 mb-4">
                              <div className="bg-green-100 p-2 rounded-lg text-green-700"><Sprout size={24}/></div>
@@ -151,20 +272,25 @@ const AdminView = ({ auth }) => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-100">
                               {asignarMode === h._id ? (
-                                  <div className="flex gap-2 items-center animate-fade-in">
-                                      <select className="border p-1.5 flex-1 text-sm rounded focus:ring-1 focus:ring-blue-500 outline-none" value={agricultorSeleccionado} onChange={e=>setAgricultorSeleccionado(e.target.value)}>
-                                          <option value="">Seleccionar...</option>
+                                  <div className="flex gap-2 items-center animate-fade-in bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                      <select 
+                                        className="border-none bg-transparent flex-1 text-sm outline-none font-medium text-gray-700" 
+                                        value={agricultorSeleccionado} 
+                                        onChange={e=>setAgricultorSeleccionado(e.target.value)}
+                                      >
+                                          <option value="">Selecciona Agricultor...</option>
                                           {agricultores.map(a=><option key={a._id} value={a._id}>{a.nombre}</option>)}
                                       </select>
-                                      <button onClick={()=>handleAsignar(h._id)} className="bg-blue-600 text-white p-1.5 rounded text-xs font-bold hover:bg-blue-700">OK</button>
-                                      <button onClick={()=>setAsignarMode(null)} className="text-gray-400 hover:text-gray-600 p-1"><span className="font-bold">✕</span></button>
+                                      <button onClick={()=>handleAsignar(h._id)} className="bg-blue-600 text-white p-1.5 rounded-md text-xs font-bold hover:bg-blue-700 shadow-sm transition-all">OK</button>
+                                      <button onClick={()=>setAsignarMode(null)} className="text-gray-400 hover:text-red-500 p-1"><X size={16} /></button>
                                   </div>
                               ) : (
-                                  <button onClick={()=>setAsignarMode(h._id)} className="w-full text-blue-600 text-sm bg-blue-50 py-2 rounded-lg flex justify-center items-center gap-2 hover:bg-blue-100 transition font-medium">
+                                  <button onClick={()=>setAsignarMode(h._id)} className="w-full text-blue-600 text-sm bg-blue-50 py-2 rounded-lg flex justify-center items-center gap-2 hover:bg-blue-100 transition font-medium border border-blue-100 hover:border-blue-200">
                                     <LinkIcon size={14}/> Asignar Agricultor
                                   </button>
                               )}
                               <p className="text-xs text-center text-gray-400 mt-2">
+                                  {/* Mostrar contador real basado en la longitud del array */}
                                   {h.agricultores?.length || 0} agricultores monitoreando
                               </p>
                           </div>
@@ -182,9 +308,16 @@ const AdminView = ({ auth }) => {
                                 </div>
                               </div>
                           </div>
-                          <button onClick={()=>handleDelAgri(a._id)} className="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition"><Trash2 size={18}/></button>
+                          <button onClick={()=>handleDelAgri(a._id)} className="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition hover:scale-110"><Trash2 size={18}/></button>
                       </div>
                   ))}
+                  
+                  {activeTab === 'huertos' && huertos.length === 0 && (
+                      <p className="col-span-3 text-center text-gray-500 py-10">No hay huertos registrados.</p>
+                  )}
+                  {activeTab === 'agricultores' && agricultores.length === 0 && (
+                      <p className="col-span-3 text-center text-gray-500 py-10">No hay agricultores registrados.</p>
+                  )}
               </div>
           )}
       </div>
@@ -192,9 +325,7 @@ const AdminView = ({ auth }) => {
   );
 };
 
-// === COMPONENTE PRINCIPAL (DECISOR) ===
 const Dashboard = () => {
-    // CORRECCIÓN CLAVE: Destructuramos cerrarSesion aquí, no en el return
     const { auth, cargando, cerrarSesion } = useAuth();
 
     if (cargando) return <div className="h-screen flex justify-center items-center"><Loader2 className="animate-spin text-green-600" size={50}/></div>;
