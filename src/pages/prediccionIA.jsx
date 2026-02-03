@@ -2,9 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { 
     Calculator, ArrowRight, BrainCircuit, Thermometer, Sun 
 } from "lucide-react";
+// 1. IMPORTAR YUP
+import * as yup from 'yup';
 import { obtenerAlertaHelada, predecirTemperatura } from '../services/iaService';
 
-// --- COMPONENTE 1: TARJETA DE ALERTA AUTOMÁTICA ---
+// --- DEFINICIÓN DEL ESQUEMA YUP (LÓGICA) ---
+const validationSchema = yup.object().shape({
+    temp_max: yup.number()
+        .typeError('Debe ser un número')
+        .required('Campo obligatorio'),
+    temp_min: yup.number()
+        .typeError('Debe ser un número')
+        .required('Campo obligatorio')
+        .lessThan(yup.ref('temp_max'), 'Debe ser menor a la Máxima'), // Validación cruzada
+    lluvia: yup.number()
+        .typeError('Debe ser un número')
+        .min(0, 'No puede ser negativo')
+        .required('Campo obligatorio'),
+    mes: yup.number()
+        .typeError('Debe ser un número')
+        .integer('Debe ser entero')
+        .min(1, 'Entre 1 y 12')
+        .max(12, 'Entre 1 y 12')
+        .required('Campo obligatorio')
+});
+
+// --- COMPONENTE 1: TARJETA DE ALERTA AUTOMÁTICA (INTACTO) ---
 function AlertaIACard({ data, loading }) {
     if (loading) {
         return (
@@ -51,57 +74,54 @@ function AlertaIACard({ data, loading }) {
     );
 }
 
-// --- COMPONENTE 2: WIDGET SIMULADOR ---
+// --- COMPONENTE 2: WIDGET SIMULADOR (CON YUP, MISMO DISEÑO) ---
 function SimuladorWidget() {
     const [inputs, setInputs] = useState({
-        temp_max: '',
-        temp_min: '',
-        lluvia: '',
-        mes: ''
+        temp_max: '', temp_min: '', lluvia: '', mes: ''
     });
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    
+    // Estados para manejo de errores YUP
+    const [errors, setErrors] = useState({}); 
+    const [apiError, setApiError] = useState(""); 
 
     const handleChange = (e) => {
-        
-        setError(""); 
+        setErrors({ ...errors, [e.target.name]: null }); // Limpiar error al escribir
+        setApiError(""); 
         setInputs({ ...inputs, [e.target.name]: e.target.value });
     };
 
     const handleSimular = async (e) => {
         e.preventDefault();
-        
-        const tMax = parseFloat(inputs.temp_max);
-        const tMin = parseFloat(inputs.temp_min);
-        const lluviaVal = parseFloat(inputs.lluvia);
-        const mesVal = parseInt(inputs.mes);
+        setApiError("");
+        setErrors({}); 
 
-        // --- 2. VALIDACIONES LÓGICAS ---
-        if (tMin > tMax) {
-            setError("⚠️ La temperatura mínima no puede ser mayor a la máxima.");
-            return; 
-        }
-        if (mesVal < 1 || mesVal > 12) {
-            setError("⚠️ El mes debe estar entre 1 y 12.");
-            return;
-        }
-        // -------------------------------
-
-        setLoading(true);
         try {
+            // 2. EJECUCIÓN DE YUP
+            await validationSchema.validate(inputs, { abortEarly: false });
+
+            setLoading(true);
             const payload = {
-                temp_max: tMax,
-                temp_min: tMin,
-                lluvia: lluviaVal,
-                mes: mesVal
+                temp_max: parseFloat(inputs.temp_max),
+                temp_min: parseFloat(inputs.temp_min),
+                lluvia: parseFloat(inputs.lluvia),
+                mes: parseInt(inputs.mes)
             };
             const data = await predecirTemperatura(payload);
             setResultado(data);
-        } catch (error) {
-            console.error(error);
-            setError("Error de conexión con la IA.");
+
+        } catch (err) {
+            if (err.inner) { // Errores de validación
+                const newErrors = {};
+                err.inner.forEach((error) => newErrors[error.path] = error.message);
+                setErrors(newErrors);
+            } else { // Errores de API
+                console.error(err);
+                setApiError("Error de conexión con la IA.");
+            }
         } finally {
+            if (!errors) setLoading(false); // Solo apagar loading si no fue error de validación inmediato
             setLoading(false);
         }
     };
@@ -116,6 +136,9 @@ function SimuladorWidget() {
     const valorPredicho = resultado?.prediccion_temperatura;
     const estilos = obtenerEstiloResultado(valorPredicho);
 
+    // Helper para mantener tus clases originales + borde rojo si hay error
+    const getInputClass = (fieldName) => `w-full mt-1 p-2 bg-gray-50 border rounded-lg outline-none transition-all ${errors[fieldName] ? 'border-red-300 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-purple-500'}`;
+
     return (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -127,35 +150,43 @@ function SimuladorWidget() {
 
             <div className="flex flex-col lg:flex-row gap-8">
                 <form onSubmit={handleSimular} className="flex-1 grid grid-cols-2 gap-4">
+                    {/* INPUTS CON ESTRUCTURA ORIGINAL */}
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">T. Máxima (°C)</label>
-                        <input type="number" step="0.1" name="temp_max" required 
-                            className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all" 
+                        <input type="number" step="0.1" name="temp_max" 
+                            className={getInputClass('temp_max')} 
                             placeholder="Ej: 22.5" onChange={handleChange} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">T. Mínima (°C)</label>
-                        <input type="number" step="0.1" name="temp_min" required 
-                            className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all" 
-                            placeholder="Ej: 10.2" onChange={handleChange} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Lluvia (mm)</label>
-                        <input type="number" step="0.1" name="lluvia" required 
-                            className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all" 
-                            placeholder="Ej: 3.5" onChange={handleChange} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Mes (1-12)</label>
-                        <input type="number" min="1" max="12" name="mes" required 
-                            className="w-full mt-1 p-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all" 
-                            placeholder="Ej: 2" onChange={handleChange} />
+                        {errors.temp_max && <p className="text-red-500 text-xs mt-1 font-medium">{errors.temp_max}</p>}
                     </div>
 
-                    {/* MENSAJE DE ERROR */}
-                    {error && (
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">T. Mínima (°C)</label>
+                        <input type="number" step="0.1" name="temp_min" 
+                            className={getInputClass('temp_min')} 
+                            placeholder="Ej: 10.2" onChange={handleChange} />
+                        {errors.temp_min && <p className="text-red-500 text-xs mt-1 font-medium">{errors.temp_min}</p>}
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Lluvia (mm)</label>
+                        <input type="number" step="0.1" name="lluvia" 
+                            className={getInputClass('lluvia')} 
+                            placeholder="Ej: 3.5" onChange={handleChange} />
+                        {errors.lluvia && <p className="text-red-500 text-xs mt-1 font-medium">{errors.lluvia}</p>}
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase">Mes (1-12)</label>
+                        <input type="number" name="mes" 
+                            className={getInputClass('mes')} 
+                            placeholder="Ej: 2" onChange={handleChange} />
+                        {errors.mes && <p className="text-red-500 text-xs mt-1 font-medium">{errors.mes}</p>}
+                    </div>
+
+                    {/* ERROR GENERAL DE API (Mantiene tu diseño de alerta) */}
+                    {apiError && (
                         <div className="col-span-2 bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 font-medium animate-pulse">
-                            {error}
+                            {apiError}
                         </div>
                     )}
 
@@ -168,7 +199,7 @@ function SimuladorWidget() {
                     </button>
                 </form>
 
-                {/* TARJETA DE RESULTADO */}
+                {/* TARJETA RESULTADO (DISEÑO ORIGINAL) */}
                 <div className={`flex-1 rounded-xl border ${estilos.border} ${estilos.bg} p-4 flex flex-col justify-center items-center text-center min-h-[150px] transition-all duration-500`}>
                     {!resultado ? (
                         <div className="text-gray-400">
@@ -200,7 +231,7 @@ function SimuladorWidget() {
     );
 }
 
-// --- PÁGINA PRINCIPAL DE PREDICCIONES ---
+// --- PÁGINA PRINCIPAL (INTACTO) ---
 const PrediccionIA = () => {
     const [datosIA, setDatosIA] = useState(null);
     const [loadingIA, setLoadingIA] = useState(true);
