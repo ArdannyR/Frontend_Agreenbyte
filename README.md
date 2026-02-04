@@ -40,7 +40,7 @@ Prerrequisitos
  * MongoDB (corriendo localmente o una URI de MongoDB Atlas)
  * Git
 1. Clonar el Repositorio
-git clone [https://github.com/tu-usuario/agreenbyte.git](https://github.com/tu-usuario/agreenbyte.git)
+git clone [(https://github.com/ArdannyR/Frontend_Agreenbyte.git))]
 cd agreenbyte
 
 2. Configurar el Backend (Servidor)
@@ -51,7 +51,7 @@ npm install
 Crea un archivo .env en la carpeta backend con las siguientes variables:
 PORT=4000
 MONGO_URI=mongodb://localhost:27017/agreenbyte
-JWT_SECRET=tu_palabra_secreta_super_segura
+JWT_SECRET="stfsmmu"
 FRONTEND_URL=http://localhost:5173
 
 Inicia el servidor:
@@ -65,7 +65,7 @@ cd frontend
 npm install
 
 Crea un archivo .env en la carpeta frontend:
-VITE_BACKEND_URL=http://localhost:4000
+VITE_BACKEND_URL=http:https://backend-agreenbyte.onrender.com/
 
 Inicia la aplicación de React:
 npm run dev
