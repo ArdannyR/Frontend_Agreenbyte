@@ -355,7 +355,7 @@ function AgricultorDashboard({ initialHuertoId, onBack }) {
                 {huertoActual._id && (
                     <button 
                         onClick={exportarCSV}
-                        className="hidden sm:flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors border border-green-200 shadow-sm"
+                        className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors border border-green-200 shadow-sm"
                         title="Descargar reporte semanal"
                     >
                         <Download size={16} />

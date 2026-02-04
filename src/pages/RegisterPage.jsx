@@ -90,7 +90,7 @@ const RegisterPage = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Juan Pérez"
+                                    placeholder=""
                                     className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-gray-50 focus:bg-white"
                                     value={nombre}
                                     onChange={e => setNombre(e.target.value)}
@@ -106,7 +106,7 @@ const RegisterPage = () => {
                                 </div>
                                 <input
                                     type="email"
-                                    placeholder="correo@ejemplo.com"
+                                    placeholder=""
                                     className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all bg-gray-50 focus:bg-white"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}

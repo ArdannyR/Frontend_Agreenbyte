@@ -143,7 +143,6 @@ function LandingPage() {
             </h1>
             <Leaf className="text-[#BEF035]" size={28} strokeWidth={2.5} />
           </div>
-          {/* BOTÓN VISIBLE: Se usa inline-flex para asegurar visibilidad en móviles */}
           <button 
             onClick={handleStart} 
             className="inline-flex items-center text-white border border-white/30 px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-medium hover:bg-white hover:text-black transition-all font-space tracking-wide backdrop-blur-sm"
