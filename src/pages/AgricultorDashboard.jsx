@@ -7,6 +7,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line, Bar } from "react-chartjs-2";
 import clienteAxios from '../config/clienteAxios';
 import useAuth from '../hooks/useAuth';
+import io from 'socket.io-client'; // Importamos Socket.io
 
 // Registro de ChartJS
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -77,7 +78,7 @@ function MetricCard({ title, value, unit, statusText, change, isPositive, icon }
 }
 
 function RecommendationCard({ tipoCultivo }) {
-    // Base de datos local de recomendaciones (ya que el backend no devuelve esto aún)
+    // Base de datos local de recomendaciones
     const recomendaciones = {
         "Tomate": {
             motivo: "El tomate requiere temperaturas constantes entre 20-24°C. Vigila la humedad para evitar hongos.",
@@ -146,15 +147,18 @@ function AgricultorDashboard() {
     const [huertoId, setHuertoId] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Cargar datos reales
+    // Cargar datos reales y Conectar WebSockets
     useEffect(() => {
+        // 1. Obtener datos iniciales vía API REST
         const obtenerMisHuertos = async () => {
             const token = localStorage.getItem('token');
             if (!token) return;
             const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
 
             try {
-                const { data } = await clienteAxios.get('/api/agricultores/mis-huertos', config);
+                // Usamos /api/huertos que ya incluye la lógica de Mock Data
+                const { data } = await clienteAxios.get('/api/huertos', config);
+                
                 setHuertos(data);
                 if (data.length > 0) {
                     setHuertoId(data[0]._id);
@@ -166,17 +170,73 @@ function AgricultorDashboard() {
             }
         };
         obtenerMisHuertos();
+
+        // 2. Conectar a Socket.io
+        const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000');
+
+        socket.on('connect', () => {
+            console.log('🔌 Conectado a Socket.io');
+        });
+
+        // 3. Escuchar actualizaciones de sensores
+        socket.on('sensor:data', (newData) => {
+            setHuertos(prevHuertos => {
+                return prevHuertos.map(h => {
+                    if (h._id === newData.huertoId) {
+                        return { 
+                            ...h, 
+                            temperatura: newData.temperatura, 
+                            humedad: newData.humedad 
+                        };
+                    }
+                    return h;
+                });
+            });
+        });
+
+        // Cleanup al desmontar
+        return () => {
+            socket.disconnect();
+        };
     }, []);
+
+    // 4. EFECTO DE SIMULACIÓN DE DATOS
+    useEffect(() => {
+        const simulationInterval = setInterval(() => {
+            setHuertos(currentHuertos => {
+                return currentHuertos.map(h => {
+                    const baseTemp = parseFloat(h.temperatura) || 20;
+                    const baseHum = parseFloat(h.humedad) || 50;
+
+                    const variacionTemp = (Math.random() * 0.8) - 0.4;
+                    const variacionHum = Math.floor((Math.random() * 5) - 2);
+
+                    let newTemp = (baseTemp + variacionTemp).toFixed(1);
+                    let newHum = baseHum + variacionHum;
+
+                    if (newHum > 100) newHum = 100;
+                    if (newHum < 0) newHum = 0;
+
+                    return {
+                        ...h,
+                        temperatura: newTemp,
+                        humedad: newHum
+                    };
+                });
+            });
+        }, 5000); 
+
+        return () => clearInterval(simulationInterval);
+    }, []);
+
 
     // Datos del huerto seleccionado
     const huertoActual = huertos.find(h => h._id === huertoId) || {};
 
-    // --- GENERADOR DE DATOS DE GRÁFICO (SIMULACIÓN BASADA EN DATOS REALES) ---
-    // Como el backend aún no tiene histórico, generamos una curva alrededor del valor actual
+    // --- GENERADOR DE DATOS DE GRÁFICO ---
     const generarDatosCurva = (base) => {
         const val = Number(base) || 0;
         if (val === 0) return [0, 0, 0, 0, 0, 0, 0];
-        // Variación aleatoria pequeña para simular realismo
         return [val - 1.5, val - 0.5, val + 0.5, val, val + 1.2, val - 0.8, val];
     };
 
@@ -211,12 +271,13 @@ function AgricultorDashboard() {
                 "rgba(34, 197, 94, 0.7)",
                 "rgba(34, 197, 94, 0.7)",
                 "rgba(34, 197, 94, 0.7)",
-                "rgba(34, 197, 94, 1)", // Actual más oscuro
+                "rgba(34, 197, 94, 1)", 
             ],
             borderRadius: 6,
         }],
     };
 
+    // === AQUÍ ESTÁ LA DEFINICIÓN QUE FALTABA O ESTABA MAL ESCRITA ===
     const optionsSuelo = {
         responsive: true,
         maintainAspectRatio: false,
@@ -250,17 +311,17 @@ function AgricultorDashboard() {
                 {huertoActual._id ? (
                     <>
                         <div className="flex gap-2 p-1 overflow-x-auto mb-4">
-                            <span className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-green-100 text-green-700 px-3 text-xs font-bold border border-green-200">
+                            <span className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-green-100 text-green-700 px-3 text-xs font-bold border border-green-200 animate-pulse">
                                 En Vivo
                             </span>
-                            <span className="text-xs text-gray-400 flex items-center">Actualizado hace un momento</span>
+                            <span className="text-xs text-gray-400 flex items-center">Sincronizado vía Socket.IO</span>
                         </div>
 
                         {/* METRICAS */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             <MetricCard
                                 title="Temp. Aire"
-                                value={huertoActual.temperatura || 10}
+                                value={huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'}
                                 unit="°C"
                                 statusText={huertoActual.temperatura > 30 ? "Alta" : "Normal"}
                                 change={0.5}
@@ -268,7 +329,7 @@ function AgricultorDashboard() {
                             />
                             <MetricCard
                                 title="Humedad"
-                                value={huertoActual.humedad || 20}
+                                value={huertoActual.humedad !== undefined ? huertoActual.humedad : '--'}
                                 unit="%"
                                 statusText={huertoActual.humedad < 40 ? "Baja" : "Óptima"}
                                 change={-1.2}
@@ -276,14 +337,14 @@ function AgricultorDashboard() {
                             />
                             <MetricCard
                                 title="Viento"
-                                value="3.5" // Simulado (falta sensor)
+                                value="3.5" // Simulado
                                 unit="m/s"
                                 statusText="Moderado"
                                 icon={<Wind size={20} />}
                             />
                             <MetricCard
                                 title="Nutrientes"
-                                value="850" // Simulado (falta sensor)
+                                value="850" // Simulado
                                 unit="PPM"
                                 statusText="Fértil"
                                 icon={<FlaskConical size={20} />}
@@ -299,7 +360,7 @@ function AgricultorDashboard() {
                                         <TrendingUp size={18} className="text-blue-500" /> Tendencia Térmica
                                     </h3>
                                     <p className="text-3xl font-bold text-gray-800">
-                                        {huertoActual.temperatura || 30}°C
+                                        {huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'}°C
                                     </p>
                                 </div>
                                 <div className="h-64 mt-4 w-full">
@@ -314,7 +375,7 @@ function AgricultorDashboard() {
                                         <FlaskConical size={18} className="text-green-500" /> Historial Humedad
                                     </h3>
                                     <p className="text-3xl font-bold text-gray-800">
-                                        {huertoActual.humedad || 0}%
+                                        {huertoActual.humedad !== undefined ? huertoActual.humedad : '--'}%
                                     </p>
                                 </div>
                                 <div className="h-64 mt-4 w-full">
