@@ -132,11 +132,12 @@ function LandingPage() {
             </h1>
             <Leaf className="text-[#BEF035]" size={28} strokeWidth={2.5} />
           </div>
+          {/* BOTÓN CORREGIDO: Eliminado 'hidden sm:inline-flex' y reemplazado por 'inline-flex' */}
           <button 
             onClick={handleStart} 
-            className="hidden sm:inline-flex items-center text-white border border-white/30 px-6 py-2.5 rounded-full text-sm font-medium hover:bg-white hover:text-black transition-all font-space tracking-wide backdrop-blur-sm"
+            className="inline-flex items-center text-white border border-white/30 px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-medium hover:bg-white hover:text-black transition-all font-space tracking-wide backdrop-blur-sm"
           >
-            Acceder a la plataforma
+            Acceder
           </button>
         </div>
       </header>
