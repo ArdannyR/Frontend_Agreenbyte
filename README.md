@@ -88,4 +88,3 @@ Este proyecto fue desarrollado como parte de la asignatura de Desarrollo de Apli
  * Juan Lucero
  * Brandon Huera
  * Ardanny Romero
-📄 Licencia
