@@ -54,7 +54,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
 };
 
 // === COMPONENTE VISTA DE ADMINISTRADOR ===
-const AdminView = ({ auth, cerrarSesion }) => {
+const AdminView = ({ auth }) => {
   const [activeTab, setActiveTab] = useState('huertos');
   const [huertos, setHuertos] = useState([]);
   const [agricultores, setAgricultores] = useState([]);
@@ -175,6 +175,7 @@ const AdminView = ({ auth, cerrarSesion }) => {
                 await clienteAxios.delete(`/api/huertos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
                 setHuertos(huertos.filter(h=>h._id!==id));
                 showToast("Huerto eliminado");
+            // eslint-disable-next-line no-unused-vars
             } catch (error) {
                 showToast("Error al eliminar huerto", "error");
             }
