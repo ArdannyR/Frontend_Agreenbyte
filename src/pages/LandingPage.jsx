@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Leaf, Activity, Bell, Droplets, ArrowRight } from 'lucide-react';
+import useAuth from '../hooks/useAuth'; // IMPORTANTE: Importamos el hook de autenticación
 
 // IMPORTANTE: Asegúrate de que el video esté en esta ruta
 import heroVideo from '../assets/hero-video.mp4'; 
@@ -70,11 +71,18 @@ const PlantGallery = ({ plants, loading }) => {
 // =========================================
 function LandingPage() {
   const navigate = useNavigate();
+  const { auth } = useAuth(); // Obtenemos el estado de autenticación
   const handleStart = () => navigate('/login');
 
   const [galleryPlants, setGalleryPlants] = useState([]);
   const [loadingGallery, setLoadingGallery] = useState(true);
 
+  // EFECTO DE PROTECCIÓN: Si el usuario ya está logueado, lo mandamos al dashboard
+  useEffect(() => {
+    if (auth?._id) {
+        navigate('/dashboard');
+    }
+  }, [auth, navigate]);
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -88,7 +96,7 @@ function LandingPage() {
     const fetchGallery = async () => {
     
       const API_KEY = 'sk-dRrc697fd6845c5f813382'; // Tu API Key original
-      const searchTerm = 'beet'; // Cambiado a 'tree' para coincidir con el tema, pero la lógica es la misma
+      const searchTerm = 'beet'; // Cambiado a 'tree' para coincidir con el tema
       
       try {
         const response = await fetch(`https://perenual.com/api/species-list?key=${API_KEY}&q=${searchTerm}`);
@@ -96,12 +104,10 @@ function LandingPage() {
         
         const data = await response.json();
         
-        // Verificación simple como en tu código original
         const plantsWithImages = data.data.filter(plant => 
           plant.default_image && plant.default_image.original_url
         );
 
-        // Usamos slice(0, 10) para tener suficientes imágenes en el carrusel infinito
         setGalleryPlants(plantsWithImages.slice(0, 10));
 
       } catch (error) {
@@ -114,6 +120,11 @@ function LandingPage() {
     fetchGallery();
   }, []);
   
+  // SOLUCIÓN AL SOLAPAMIENTO: 
+  // Si hay un usuario autenticado, NO renderizamos nada de la Landing Page.
+  // Esto evita que se pinte encima del Dashboard mientras redirige.
+  if (auth?._id) return null;
+
   return (
     <div className="min-h-screen w-full bg-white text-gray-900 font-sans flex flex-col overflow-x-hidden">
       
@@ -132,12 +143,12 @@ function LandingPage() {
             </h1>
             <Leaf className="text-[#BEF035]" size={28} strokeWidth={2.5} />
           </div>
-          {/* BOTÓN CORREGIDO: Eliminado 'hidden sm:inline-flex' y reemplazado por 'inline-flex' */}
+          {/* BOTÓN VISIBLE: Se usa inline-flex para asegurar visibilidad en móviles */}
           <button 
             onClick={handleStart} 
             className="inline-flex items-center text-white border border-white/30 px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-medium hover:bg-white hover:text-black transition-all font-space tracking-wide backdrop-blur-sm"
           >
-            Acceder a la plataforma
+            Acceder
           </button>
         </div>
       </header>

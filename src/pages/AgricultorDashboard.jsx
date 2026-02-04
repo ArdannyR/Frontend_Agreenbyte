@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
     Droplets, Thermometer, Wind, Sun, FlaskConical, MapPin,
-    TrendingUp, Sprout, Info, LogOut, Loader2, ArrowLeft
+    TrendingUp, Sprout, Info, LogOut, Loader2, ArrowLeft, Download
 } from "lucide-react";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
@@ -139,7 +139,6 @@ function RecommendationCard({ tipoCultivo }) {
 // DASHBOARD PRINCIPAL 
 // ===========================================
 
-// Aceptamos props nuevas: initialHuertoId (para preseleccionar) y onBack (para volver al admin)
 function AgricultorDashboard({ initialHuertoId, onBack }) {
     const { auth } = useAuth();
     const [huertos, setHuertos] = useState([]);
@@ -186,9 +185,9 @@ function AgricultorDashboard({ initialHuertoId, onBack }) {
             });
         });
         return () => socket.disconnect();
-    }, [initialHuertoId]); // Añadimos initialHuertoId a dependencias
+    }, [initialHuertoId]); 
 
-    // Simulación
+    // Simulación de datos en vivo (suavizado)
     useEffect(() => {
         const simulationInterval = setInterval(() => {
             setHuertos(currentHuertos => {
@@ -208,6 +207,72 @@ function AgricultorDashboard({ initialHuertoId, onBack }) {
     }, []);
 
     const huertoActual = huertos.find(h => h._id === huertoId) || {};
+
+    // --- FUNCIÓN EXPORTAR CSV ---
+    const exportarCSV = () => {
+        if (!huertoActual._id) return;
+
+        // Base para la simulación
+        const baseTemp = parseFloat(huertoActual.temperatura) || 24;
+        const baseHum = parseFloat(huertoActual.humedad) || 60;
+        
+        // Generar datos para los últimos 7 días
+        const filas = [];
+        const hoy = new Date();
+
+        for (let i = 6; i >= 0; i--) {
+            const fecha = new Date(hoy);
+            fecha.setDate(hoy.getDate() - i);
+            const fechaStr = fecha.toLocaleDateString();
+
+            // Simulamos 3 mediciones por día (Mañana, Tarde, Noche)
+            const momentos = ['08:00', '14:00', '20:00'];
+            
+            momentos.forEach(hora => {
+                // Variación aleatoria realista
+                const varTemp = (Math.random() * 4) - 2; // +/- 2 grados
+                const varHum = Math.floor((Math.random() * 10) - 5); // +/- 5%
+                
+                // Ajuste lógico por hora (más calor a las 14:00)
+                let ajusteHora = 0;
+                if (hora === '14:00') ajusteHora = 2;
+                if (hora === '20:00') ajusteHora = -1;
+
+                const temp = (baseTemp + varTemp + ajusteHora).toFixed(1);
+                const hum = Math.min(100, Math.max(0, baseHum + varHum - (ajusteHora * 2))); // Humedad inversa a temp
+
+                filas.push([
+                    fechaStr,
+                    hora,
+                    huertoActual.nombre,
+                    huertoActual.tipoCultivo,
+                    temp,
+                    hum,
+                    (Math.random() * 5).toFixed(1), // Viento
+                    Math.floor(Math.random() * 100 + 800) // Nutrientes
+                ]);
+            });
+        }
+
+        // Encabezados
+        const cabeceras = ['Fecha', 'Hora', 'Huerto', 'Cultivo', 'Temperatura (°C)', 'Humedad (%)', 'Viento (m/s)', 'Nutrientes (PPM)'];
+        
+        // Construir CSV
+        const csvContent = [
+            cabeceras.join(','), 
+            ...filas.map(fila => fila.join(','))
+        ].join('\n');
+
+        // Descargar
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `reporte_semanal_${huertoActual.nombre.replace(/\s+/g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const generarDatosCurva = (base) => {
         const val = Number(base) || 0;
@@ -285,6 +350,18 @@ function AgricultorDashboard({ initialHuertoId, onBack }) {
                         </div>
                     </div>
                 </div>
+
+                {/* BOTÓN EXPORTAR CSV */}
+                {huertoActual._id && (
+                    <button 
+                        onClick={exportarCSV}
+                        className="hidden sm:flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors border border-green-200 shadow-sm"
+                        title="Descargar reporte semanal"
+                    >
+                        <Download size={16} />
+                        <span className="hidden md:inline">Exportar CSV</span>
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full">
@@ -340,6 +417,9 @@ function AgricultorDashboard({ initialHuertoId, onBack }) {
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
                         <div className="bg-gray-100 p-6 rounded-full mb-4"><Sprout className="text-gray-400" size={48} /></div>
                         <h3 className="text-xl font-bold text-gray-800">No hay datos para mostrar</h3>
+                        <p className="text-gray-500 text-center max-w-md mt-2">
+                            Parece que no tienes huertos asignados o seleccionados. Contacta al administrador para que te asigne uno.
+                        </p>
                     </div>
                 )}
             </div>
