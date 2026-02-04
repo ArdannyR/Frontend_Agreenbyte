@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle, Pencil, Unlink
+  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle, Pencil, Unlink, BarChart3
 } from 'lucide-react';
 import clienteAxios from '../config/clienteAxios';
 import useAuth from '../hooks/useAuth';
@@ -134,6 +134,9 @@ const AdminView = ({ auth }) => {
   const [showForm, setShowForm] = useState(false);
   const [asignarMode, setAsignarMode] = useState(null);
   const [agricultorSeleccionado, setAgricultorSeleccionado] = useState("");
+
+  // ESTADO PARA VISTA DE MÉTRICAS
+  const [metricsView, setMetricsView] = useState({ active: false, huertoId: null });
 
   // Estados para Toast, Modal Confirmación y Modal Edición
   const [toast, setToast] = useState(null);
@@ -308,6 +311,16 @@ const AdminView = ({ auth }) => {
       );
   }
 
+  // === RENDERIZADO CONDICIONAL: Si metricsView está activo, mostramos el Dashboard de Métricas ===
+  if (metricsView.active) {
+    return (
+        <AgricultorDashboard 
+            initialHuertoId={metricsView.huertoId} 
+            onBack={() => setMetricsView({ active: false, huertoId: null })}
+        />
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen font-sans relative">
       {/* Toast, ConfirmModal y EditModal */}
@@ -382,6 +395,14 @@ const AdminView = ({ auth }) => {
                              <MapPin size={16}/> {h.ubicacion}
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-100">
+                              {/* NUEVO BOTÓN VER MÉTRICAS */}
+                              <button 
+                                onClick={() => setMetricsView({ active: true, huertoId: h._id })}
+                                className="w-full text-green-700 text-sm bg-green-50 py-2 rounded-lg flex justify-center items-center gap-2 hover:bg-green-100 transition font-medium border border-green-100 hover:border-green-200 mb-2"
+                              >
+                                <BarChart3 size={16} /> Ver Métricas en Vivo
+                              </button>
+
                               {asignarMode === h._id ? (
                                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 animate-fade-in space-y-3">
                                       <div className="flex justify-between items-center mb-1">

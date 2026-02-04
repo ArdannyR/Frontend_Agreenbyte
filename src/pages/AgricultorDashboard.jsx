@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
     Droplets, Thermometer, Wind, Sun, FlaskConical, MapPin,
-    TrendingUp, Sprout, Info, LogOut, Loader2
+    TrendingUp, Sprout, Info, LogOut, Loader2, ArrowLeft
 } from "lucide-react";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import clienteAxios from '../config/clienteAxios';
 import useAuth from '../hooks/useAuth';
-import io from 'socket.io-client'; // Importamos Socket.io
+import io from 'socket.io-client';
 
 // Registro de ChartJS
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -16,9 +16,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 // COMPONENTES AUXILIARES
 // ===========================================
 
-// Selector de Huertos Reales
 function SelectorHuerto({ huertos, seleccionado, setSeleccionado }) {
-    if (!huertos.length) return <div className="text-gray-500 mb-4 font-medium p-4 bg-white rounded-xl border border-gray-200">No tienes huertos asignados por el administrador.</div>;
+    if (!huertos.length) return <div className="text-gray-500 mb-4 font-medium p-4 bg-white rounded-xl border border-gray-200">No tienes huertos asignados.</div>;
 
     return (
         <div className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
@@ -78,7 +77,6 @@ function MetricCard({ title, value, unit, statusText, change, isPositive, icon }
 }
 
 function RecommendationCard({ tipoCultivo }) {
-    // Base de datos local de recomendaciones
     const recomendaciones = {
         "Tomate": {
             motivo: "El tomate requiere temperaturas constantes entre 20-24°C. Vigila la humedad para evitar hongos.",
@@ -94,7 +92,6 @@ function RecommendationCard({ tipoCultivo }) {
         }
     };
 
-    // Default si no coincide
     const data = recomendaciones[tipoCultivo] || {
         motivo: `Mantén las condiciones estables para tu cultivo de ${tipoCultivo || 'plantas'}. Revisa los sensores periódicamente.`,
         imagen: "https://images.pexels.com/photos/2132227/pexels-photo-2132227.jpeg?auto=compress&cs=tinysrgb&w=600"
@@ -141,27 +138,32 @@ function RecommendationCard({ tipoCultivo }) {
 // ===========================================
 // DASHBOARD PRINCIPAL 
 // ===========================================
-function AgricultorDashboard() {
+
+// Aceptamos props nuevas: initialHuertoId (para preseleccionar) y onBack (para volver al admin)
+function AgricultorDashboard({ initialHuertoId, onBack }) {
     const { auth } = useAuth();
     const [huertos, setHuertos] = useState([]);
     const [huertoId, setHuertoId] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Cargar datos reales y Conectar WebSockets
     useEffect(() => {
-        // 1. Obtener datos iniciales vía API REST
         const obtenerMisHuertos = async () => {
             const token = localStorage.getItem('token');
             if (!token) return;
             const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
 
             try {
-                // Usamos /api/huertos que ya incluye la lógica de Mock Data
+                // Obtenemos huertos (si es admin trae todos los suyos, si es agricultor los asignados)
                 const { data } = await clienteAxios.get('/api/huertos', config);
                 
                 setHuertos(data);
                 if (data.length > 0) {
-                    setHuertoId(data[0]._id);
+                    // Si se pasó un ID inicial (desde Admin), úsalo. Si no, usa el primero.
+                    if (initialHuertoId && data.some(h => h._id === initialHuertoId)) {
+                        setHuertoId(initialHuertoId);
+                    } else {
+                        setHuertoId(data[0]._id);
+                    }
                 }
             } catch (error) {
                 console.error("Error cargando huertos:", error);
@@ -171,69 +173,42 @@ function AgricultorDashboard() {
         };
         obtenerMisHuertos();
 
-        // 2. Conectar a Socket.io
         const socket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000');
-
-        socket.on('connect', () => {
-            console.log('🔌 Conectado a Socket.io');
-        });
-
-        // 3. Escuchar actualizaciones de sensores
+        socket.on('connect', () => console.log('🔌 Conectado a Socket.io'));
         socket.on('sensor:data', (newData) => {
             setHuertos(prevHuertos => {
                 return prevHuertos.map(h => {
                     if (h._id === newData.huertoId) {
-                        return { 
-                            ...h, 
-                            temperatura: newData.temperatura, 
-                            humedad: newData.humedad 
-                        };
+                        return { ...h, temperatura: newData.temperatura, humedad: newData.humedad };
                     }
                     return h;
                 });
             });
         });
+        return () => socket.disconnect();
+    }, [initialHuertoId]); // Añadimos initialHuertoId a dependencias
 
-        // Cleanup al desmontar
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
-
-    // 4. EFECTO DE SIMULACIÓN DE DATOS
+    // Simulación
     useEffect(() => {
         const simulationInterval = setInterval(() => {
             setHuertos(currentHuertos => {
                 return currentHuertos.map(h => {
                     const baseTemp = parseFloat(h.temperatura) || 20;
                     const baseHum = parseFloat(h.humedad) || 50;
-
                     const variacionTemp = (Math.random() * 0.8) - 0.4;
                     const variacionHum = Math.floor((Math.random() * 5) - 2);
-
                     let newTemp = (baseTemp + variacionTemp).toFixed(1);
                     let newHum = baseHum + variacionHum;
-
-                    if (newHum > 100) newHum = 100;
-                    if (newHum < 0) newHum = 0;
-
-                    return {
-                        ...h,
-                        temperatura: newTemp,
-                        humedad: newHum
-                    };
+                    if (newHum > 100) newHum = 100; if (newHum < 0) newHum = 0;
+                    return { ...h, temperatura: newTemp, humedad: newHum };
                 });
             });
         }, 5000); 
-
         return () => clearInterval(simulationInterval);
     }, []);
 
-
-    // Datos del huerto seleccionado
     const huertoActual = huertos.find(h => h._id === huertoId) || {};
 
-    // --- GENERADOR DE DATOS DE GRÁFICO ---
     const generarDatosCurva = (base) => {
         const val = Number(base) || 0;
         if (val === 0) return [0, 0, 0, 0, 0, 0, 0];
@@ -277,7 +252,6 @@ function AgricultorDashboard() {
         }],
     };
 
-    // === AQUÍ ESTÁ LA DEFINICIÓN QUE FALTABA O ESTABA MAL ESCRITA ===
     const optionsSuelo = {
         responsive: true,
         maintainAspectRatio: false,
@@ -289,13 +263,26 @@ function AgricultorDashboard() {
 
     return (
         <div className="bg-gray-50 min-h-screen font-sans flex flex-col">
-            {/* Header Agricultor */}
+            {/* Header Agricultor (Adaptado para Admin si es necesario) */}
             <div className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 px-4 py-3 md:px-8 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="bg-green-100 p-2 rounded-lg"><Sprout className="text-green-600" size={20}/></div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900 leading-none">Monitor de Cultivos</h1>
-                        <p className="text-xs text-gray-500">Agricultor: <span className="font-semibold text-green-600">{auth.nombre}</span></p>
+                <div className="flex items-center gap-4">
+                    {/* Botón Volver solo si se provee onBack */}
+                    {onBack && (
+                        <button 
+                            onClick={onBack}
+                            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
+                            title="Volver al Panel"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                    )}
+                    
+                    <div className="flex items-center gap-2">
+                        <div className="bg-green-100 p-2 rounded-lg"><Sprout className="text-green-600" size={20}/></div>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900 leading-none">Monitor de Cultivos</h1>
+                            <p className="text-xs text-gray-500">{auth.role === 'admin' ? 'Vista Admin' : 'Agricultor'}: <span className="font-semibold text-green-600">{auth.nombre}</span></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -319,83 +306,40 @@ function AgricultorDashboard() {
 
                         {/* METRICAS */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <MetricCard
-                                title="Temp. Aire"
-                                value={huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'}
-                                unit="°C"
-                                statusText={huertoActual.temperatura > 30 ? "Alta" : "Normal"}
-                                change={0.5}
-                                icon={<Thermometer size={20} />}
-                            />
-                            <MetricCard
-                                title="Humedad"
-                                value={huertoActual.humedad !== undefined ? huertoActual.humedad : '--'}
-                                unit="%"
-                                statusText={huertoActual.humedad < 40 ? "Baja" : "Óptima"}
-                                change={-1.2}
-                                icon={<Droplets size={20} />}
-                            />
-                            <MetricCard
-                                title="Viento"
-                                value="3.5" // Simulado
-                                unit="m/s"
-                                statusText="Moderado"
-                                icon={<Wind size={20} />}
-                            />
-                            <MetricCard
-                                title="Nutrientes"
-                                value="850" // Simulado
-                                unit="PPM"
-                                statusText="Fértil"
-                                icon={<FlaskConical size={20} />}
-                            />
+                            <MetricCard title="Temp. Aire" value={huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'} unit="°C" statusText={huertoActual.temperatura > 30 ? "Alta" : "Normal"} change={0.5} icon={<Thermometer size={20} />} />
+                            <MetricCard title="Humedad" value={huertoActual.humedad !== undefined ? huertoActual.humedad : '--'} unit="%" statusText={huertoActual.humedad < 40 ? "Baja" : "Óptima"} change={-1.2} icon={<Droplets size={20} />} />
+                            <MetricCard title="Viento" value="3.5" unit="m/s" statusText="Moderado" icon={<Wind size={20} />} />
+                            <MetricCard title="Nutrientes" value="850" unit="PPM" statusText="Fértil" icon={<FlaskConical size={20} />} />
                         </div>
 
                         {/* GRÁFICOS */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            {/* Gráfico 1: Temperatura */}
                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between min-h-[320px]">
                                 <div>
                                     <h3 className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                                         <TrendingUp size={18} className="text-blue-500" /> Tendencia Térmica
                                     </h3>
-                                    <p className="text-3xl font-bold text-gray-800">
-                                        {huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'}°C
-                                    </p>
+                                    <p className="text-3xl font-bold text-gray-800">{huertoActual.temperatura !== undefined ? huertoActual.temperatura : '--'}°C</p>
                                 </div>
-                                <div className="h-64 mt-4 w-full">
-                                    <Line data={dataClima} options={optionsClima} />
-                                </div>
+                                <div className="h-64 mt-4 w-full"><Line data={dataClima} options={optionsClima} /></div>
                             </div>
-
-                            {/* Gráfico 2: Humedad */}
                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between min-h-[320px]">
                                 <div>
                                     <h3 className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                                         <FlaskConical size={18} className="text-green-500" /> Historial Humedad
                                     </h3>
-                                    <p className="text-3xl font-bold text-gray-800">
-                                        {huertoActual.humedad !== undefined ? huertoActual.humedad : '--'}%
-                                    </p>
+                                    <p className="text-3xl font-bold text-gray-800">{huertoActual.humedad !== undefined ? huertoActual.humedad : '--'}%</p>
                                 </div>
-                                <div className="h-64 mt-4 w-full">
-                                    <Bar data={dataSuelo} options={optionsSuelo} />
-                                </div>
+                                <div className="h-64 mt-4 w-full"><Bar data={dataSuelo} options={optionsSuelo} /></div>
                             </div>
                         </div>
 
-                        {/* RECOMENDACIÓN */}
                         <RecommendationCard tipoCultivo={huertoActual.tipoCultivo} />
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
-                        <div className="bg-gray-100 p-6 rounded-full mb-4">
-                            <Sprout className="text-gray-400" size={48} />
-                        </div>
+                        <div className="bg-gray-100 p-6 rounded-full mb-4"><Sprout className="text-gray-400" size={48} /></div>
                         <h3 className="text-xl font-bold text-gray-800">No hay datos para mostrar</h3>
-                        <p className="text-gray-500 text-center max-w-md mt-2">
-                            Parece que no tienes huertos asignados o seleccionados. Contacta al administrador para que te asigne uno.
-                        </p>
                     </div>
                 )}
             </div>
