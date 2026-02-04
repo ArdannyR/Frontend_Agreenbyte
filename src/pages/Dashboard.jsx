@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle
+  Users, Sprout, Plus, Trash2, MapPin, Mail, Loader2, LogOut, QrCode, Lock, Link as LinkIcon, CheckCircle, AlertCircle, X, AlertTriangle, Pencil, Unlink
 } from 'lucide-react';
 import clienteAxios from '../config/clienteAxios';
 import useAuth from '../hooks/useAuth';
@@ -27,7 +27,7 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// === COMPONENTE MODAL DE CONFIRMACIÓN (Reemplazo de window.confirm) ===
+// === COMPONENTE MODAL DE CONFIRMACIÓN ===
 const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
   if (!isOpen) return null;
   return (
@@ -44,9 +44,81 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }) => {
               Cancelar
             </button>
             <button onClick={() => { onConfirm(); onClose(); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md">
-              Sí, eliminar
+              Confirmar
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// === COMPONENTE MODAL DE EDICIÓN ===
+const EditModal = ({ isOpen, onClose, onUpdate, huerto }) => {
+  const [nombre, setNombre] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  const [tipoCultivo, setTipoCultivo] = useState('');
+
+  useEffect(() => {
+    if (huerto) {
+      setNombre(huerto.nombre || '');
+      setUbicacion(huerto.ubicacion || '');
+      setTipoCultivo(huerto.tipoCultivo || '');
+    }
+  }, [huerto]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onUpdate(huerto._id, { nombre, ubicacion, tipoCultivo });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 className="text-lg font-bold text-gray-900">Editar Huerto</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input 
+                  className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                  value={nombre} 
+                  onChange={e => setNombre(e.target.value)} 
+                  required
+                />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                <input 
+                  className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                  value={ubicacion} 
+                  onChange={e => setUbicacion(e.target.value)} 
+                  required
+                />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cultivo</label>
+                <input 
+                  className="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                  value={tipoCultivo} 
+                  onChange={e => setTipoCultivo(e.target.value)} 
+                  required
+                />
+             </div>
+             <div className="flex gap-3 justify-end mt-6">
+                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-md">
+                  Guardar Cambios
+                </button>
+             </div>
+          </form>
         </div>
       </div>
     </div>
@@ -63,9 +135,10 @@ const AdminView = ({ auth }) => {
   const [asignarMode, setAsignarMode] = useState(null);
   const [agricultorSeleccionado, setAgricultorSeleccionado] = useState("");
 
-  // Estados para Toast y Modal
+  // Estados para Toast, Modal Confirmación y Modal Edición
   const [toast, setToast] = useState(null);
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+  const [editModalConfig, setEditModalConfig] = useState({ isOpen: false, huerto: null });
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -73,6 +146,10 @@ const AdminView = ({ auth }) => {
 
   const openConfirmModal = (title, message, onConfirm) => {
     setModalConfig({ isOpen: true, title, message, onConfirm });
+  };
+
+  const openEditModal = (huerto) => {
+    setEditModalConfig({ isOpen: true, huerto });
   };
 
   const [nombreHuerto, setNombreHuerto] = useState('');
@@ -83,7 +160,7 @@ const AdminView = ({ auth }) => {
   const [emailAgricultor, setEmailAgricultor] = useState('');
   const [passwordAgricultor, setPasswordAgricultor] = useState('');
 
-  // Función para recargar huertos (útil para actualizar contadores)
+  // Función para recargar huertos
   const recargarHuertos = async () => {
       const token = localStorage.getItem('token');
       if(!token) return;
@@ -128,14 +205,25 @@ const AdminView = ({ auth }) => {
           await clienteAxios.post(`/api/huertos/agricultor/${huertoId}`, { email: agricultorObj.email }, config);
           
           showToast("Agricultor asignado correctamente");
-          setAsignarMode(null);
           setAgricultorSeleccionado("");
-          
-          // Recargar huertos para ver el contador actualizado
           recargarHuertos();
       } catch (e) { 
           showToast(e.response?.data?.msg || "Error al asignar", "error"); 
       }
+  }
+
+  const handleDesvincular = async (huertoId, agricultorId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
+        
+        await clienteAxios.put(`/api/huertos/remover-agricultor/${huertoId}`, { agricultorId }, config);
+        
+        showToast("Agricultor desvinculado correctamente");
+        recargarHuertos(); // Recarga para ver reflejada la eliminación
+    } catch (e) {
+        showToast(e.response?.data?.msg || "Error al desvincular", "error");
+    }
   }
 
   const handleAgregarHuerto = async (e) => {
@@ -148,6 +236,23 @@ const AdminView = ({ auth }) => {
           setNombreHuerto(''); setUbicacionHuerto(''); setCultivoHuerto(''); setCodigoDispositivo('');
           showToast("Huerto creado exitosamente");
       } catch (e) { showToast(e.response?.data?.msg || "Error al crear huerto", "error"); }
+  }
+
+  const handleUpdateHuerto = async (id, datosActualizados) => {
+    try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
+        
+        const { data } = await clienteAxios.put(`/api/huertos/${id}`, datosActualizados, config);
+        
+        const huertosActualizados = huertos.map(h => h._id === id ? data : h);
+        setHuertos(huertosActualizados);
+        
+        setEditModalConfig({ isOpen: false, huerto: null });
+        showToast("Huerto actualizado exitosamente");
+    } catch (e) {
+        showToast(e.response?.data?.msg || "Error al actualizar huerto", "error");
+    }
   }
 
   const handleAgregarAgricultor = async (e) => {
@@ -192,14 +297,8 @@ const AdminView = ({ auth }) => {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 await clienteAxios.delete(`/api/agricultores/${id}`, config);
-                
-                // Actualizamos lista local de agricultores
                 setAgricultores(agricultores.filter(a=>a._id!==id));
-                
-                // CRÍTICO: Recargamos los huertos para que el contador de "X agricultores monitoreando" se actualice
-                // ya que el backend ahora limpia las referencias automáticamente.
                 recargarHuertos(); 
-                
                 showToast("Agricultor eliminado y desvinculado");
             } catch (error) { 
                 console.error(error); 
@@ -211,14 +310,22 @@ const AdminView = ({ auth }) => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans relative">
-      {/* Toast y Modal */}
+      {/* Toast, ConfirmModal y EditModal */}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      
       <ConfirmModal 
         isOpen={modalConfig.isOpen} 
         onClose={() => setModalConfig({...modalConfig, isOpen: false})} 
         title={modalConfig.title} 
         message={modalConfig.message} 
         onConfirm={modalConfig.onConfirm} 
+      />
+
+      <EditModal
+        isOpen={editModalConfig.isOpen}
+        onClose={() => setEditModalConfig({ ...editModalConfig, isOpen: false })}
+        huerto={editModalConfig.huerto}
+        onUpdate={handleUpdateHuerto}
       />
 
       <div className="bg-white shadow-sm border-b border-gray-100 p-4 flex justify-between items-center sticky top-0 z-10">
@@ -259,7 +366,10 @@ const AdminView = ({ auth }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeTab === 'huertos' ? huertos.map(h => (
                       <div key={h._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group hover:shadow-md transition">
-                          <button onClick={()=>handleDelHuerto(h._id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition hover:scale-110"><Trash2 size={18}/></button>
+                          <div className="absolute top-4 right-4 flex gap-2 bg-white pl-2">
+                             <button onClick={()=>openEditModal(h)} className="text-gray-300 hover:text-blue-500 transition hover:scale-110" title="Editar Huerto"><Pencil size={18}/></button>
+                             <button onClick={()=>handleDelHuerto(h._id)} className="text-gray-300 hover:text-red-500 transition hover:scale-110" title="Eliminar Huerto"><Trash2 size={18}/></button>
+                          </div>
                           
                           <div className="flex items-center gap-3 mb-4">
                              <div className="bg-green-100 p-2 rounded-lg text-green-700"><Sprout size={24}/></div>
@@ -273,27 +383,70 @@ const AdminView = ({ auth }) => {
                           </div>
                           <div className="mt-4 pt-4 border-t border-gray-100">
                               {asignarMode === h._id ? (
-                                  <div className="flex gap-2 items-center animate-fade-in bg-blue-50 p-2 rounded-lg border border-blue-100">
-                                      <select 
-                                        className="border-none bg-transparent flex-1 text-sm outline-none font-medium text-gray-700" 
-                                        value={agricultorSeleccionado} 
-                                        onChange={e=>setAgricultorSeleccionado(e.target.value)}
-                                      >
-                                          <option value="">Selecciona Agricultor...</option>
-                                          {agricultores.map(a=><option key={a._id} value={a._id}>{a.nombre}</option>)}
-                                      </select>
-                                      <button onClick={()=>handleAsignar(h._id)} className="bg-blue-600 text-white p-1.5 rounded-md text-xs font-bold hover:bg-blue-700 shadow-sm transition-all">OK</button>
-                                      <button onClick={()=>setAsignarMode(null)} className="text-gray-400 hover:text-red-500 p-1"><X size={16} /></button>
+                                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 animate-fade-in space-y-3">
+                                      <div className="flex justify-between items-center mb-1">
+                                         <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Gestionar Accesos</span>
+                                         <button onClick={()=>setAsignarMode(null)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                                      </div>
+
+                                      {/* Lista de Agricultores Asignados */}
+                                      <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                          {h.agricultores && h.agricultores.length > 0 ? (
+                                               h.agricultores.map(idAgri => {
+                                                   // Cruzamos el ID del huerto con el estado global de agricultores para sacar el nombre
+                                                   const agri = agricultores.find(a => a._id === idAgri);
+                                                   return (
+                                                       <div key={idAgri} className="flex justify-between items-center bg-white p-2 rounded border border-blue-100 shadow-sm text-sm">
+                                                           <span className="truncate font-medium text-gray-700" title={agri ? agri.email : ''}>
+                                                               {agri ? agri.nombre : 'Agricultor'}
+                                                           </span>
+                                                           <button 
+                                                               onClick={()=>handleDesvincular(h._id, idAgri)} 
+                                                               className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition" 
+                                                               title="Desvincular del huerto"
+                                                           >
+                                                               <Unlink size={14}/>
+                                                           </button>
+                                                       </div>
+                                                   )
+                                               })
+                                          ) : <p className="text-xs text-gray-500 italic text-center py-2">Sin agricultores asignados</p>}
+                                      </div>
+
+                                      {/* Añadir Nuevo */}
+                                      <div className="flex gap-2 pt-2 border-t border-blue-200">
+                                          <select 
+                                            className="border-none bg-white p-1.5 rounded flex-1 text-xs outline-none font-medium text-gray-700 shadow-sm" 
+                                            value={agricultorSeleccionado} 
+                                            onChange={e=>setAgricultorSeleccionado(e.target.value)}
+                                          >
+                                              <option value="">+ Añadir...</option>
+                                              {/* Solo mostrar agricultores que NO estén ya en el huerto */}
+                                              {agricultores
+                                                .filter(a => !h.agricultores.includes(a._id))
+                                                .map(a=><option key={a._id} value={a._id}>{a.nombre}</option>)
+                                              }
+                                          </select>
+                                          <button 
+                                            onClick={()=>handleAsignar(h._id)} 
+                                            disabled={!agricultorSeleccionado}
+                                            className="bg-blue-600 text-white px-3 rounded text-xs font-bold hover:bg-blue-700 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                          >
+                                            OK
+                                          </button>
+                                      </div>
                                   </div>
                               ) : (
                                   <button onClick={()=>setAsignarMode(h._id)} className="w-full text-blue-600 text-sm bg-blue-50 py-2 rounded-lg flex justify-center items-center gap-2 hover:bg-blue-100 transition font-medium border border-blue-100 hover:border-blue-200">
-                                    <LinkIcon size={14}/> Asignar Agricultor
+                                    <LinkIcon size={14}/> Gestionar Agricultores
                                   </button>
                               )}
-                              <p className="text-xs text-center text-gray-400 mt-2">
-                                  {/* Mostrar contador real basado en la longitud del array */}
-                                  {h.agricultores?.length || 0} agricultores monitoreando
-                              </p>
+                              
+                              {asignarMode !== h._id && (
+                                <p className="text-xs text-center text-gray-400 mt-2">
+                                    {h.agricultores?.length || 0} agricultores monitoreando
+                                </p>
+                              )}
                           </div>
                       </div>
                   )) : agricultores.map(a => (
