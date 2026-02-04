@@ -89,4 +89,3 @@ Este proyecto fue desarrollado como parte de la asignatura de Desarrollo de Apli
  * Brandon Huera
  * Ardanny Romero
 📄 Licencia
-Este proyecto está bajo la Licencia MIT - ver el archivo LICENSE para más detalles.
